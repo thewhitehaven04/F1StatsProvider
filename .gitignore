@@ -1,0 +1,7 @@
+poetry.lock
+.vscode
+**/__pycache__
+.ipynb_checkpoints/
+**.ipynb
+**.toml
+.idea
