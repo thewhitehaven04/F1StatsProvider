@@ -8,7 +8,7 @@ from services.laps_data.laps import LapData
 
 SessionRouter = APIRouter(prefix='/session', tags=['Laps'])
 
-@SessionRouter.get('')
+@SessionRouter.get('/all')
 async def get_session_laptimes(
     params: Annotated[SessionQueryRequest, Depends(SessionQueryRequest)],
     laps_service: LapData = Depends(LapData) 

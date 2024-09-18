@@ -7,15 +7,15 @@ from fastf1.core import Telemetry
 class TelemetryData:
 
     _FILTER_COLUMNS = [
-        'RPM',
-        'Speed',
-        'SessionTime',
-        'Time',
-        'nGear',
-        'Throttle',
-        'Brake',
-        'Distance',
-        'RelativeDistance'
+        "RPM",
+        "Speed",
+        "SessionTime",
+        "Time",
+        "nGear",
+        "Throttle",
+        "Brake",
+        "Distance",
+        "RelativeDistance",
     ]
 
     def __init__(self, laps_service: LapData = Depends(LapData)) -> None:
@@ -23,7 +23,7 @@ class TelemetryData:
 
     def _resolve_telemetry_data(self, telemetry: Telemetry):
         filtered = telemetry[self._FILTER_COLUMNS]
-    
+
     def get_lap_telemetry(
         self,
         year: int,
@@ -38,4 +38,3 @@ class TelemetryData:
         driver_telemetry = (
             laps.pick_driver(driver_number).pick_lap(lap_number).get_telemetry()
         )
-
