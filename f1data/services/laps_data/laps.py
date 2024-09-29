@@ -3,6 +3,7 @@ import numpy as np
 from pandas import DataFrame, isna
 from models.laps.Identifier import LapIdentifier
 from models.session.Identifier import SessionIdentifier
+from services.laps_data.model import DriverLapDataOut
 from services.session_fetcher.fetcher import SessionFetcher
 from fastf1.core import Laps
 from services.data_transformation import core, integers, laptime, speed
@@ -24,6 +25,7 @@ class LapData:
         "Stint",
         "TyreLife",
         "Position",
+        "Compound",
     ]
 
     _COLUMN_TRANSFORM_MAP = {
@@ -38,6 +40,7 @@ class LapData:
         "Stint": integers.int_or_null,
         "TyreLife": integers.int_or_null,
         "Position": integers.int_or_null,
+        "Compound": core.identity,
         "IsOutlap": core.identity,
         "IsInlap": core.identity,
     }
@@ -53,25 +56,26 @@ class LapData:
         self._session_fetcher = session_fetcher
 
     @staticmethod
-    def _populate_with_data(laps: DataFrame): 
-        laps["IsOutlap"] = isna(laps["Sector1Time"])
-        laps['IsInlap'] = isna(laps['Sector3Time'])
+    def _populate_with_data(laps: DataFrame):
+        laps.loc[:, "IsOutlap"] = isna(laps["Sector1Time"])
+        laps.loc[:, "IsInlap"] = isna(laps["Sector1Time"])
         return laps
 
-    def _resolve_lap_data(self, laps: Laps):
+    def _resolve_lap_data(self, laps: Laps) -> list[DriverLapDataOut]:
         formatted_laps = laps[self._LAP_COLUMNS_FILTER]
         populated_laps = self._populate_with_data(formatted_laps)
 
         indexed_data = populated_laps.set_index(self._INDEX)
+
         return [
-            {
-                "driver": unique_index[0],
-                "team": unique_index[1],
-                "data": indexed_data.loc[unique_index]
+            DriverLapDataOut(
+                driver=unique_index[0],
+                team=unique_index[1],
+                data=indexed_data.loc[unique_index]
                 .transform(self._COLUMN_TRANSFORM_MAP)
                 .replace(np.nan, None)
                 .to_dict(orient="records"),
-            }
+            )
             for unique_index in indexed_data.index.unique()
         ]
 
@@ -85,7 +89,7 @@ class LapData:
 
     def get_laptimes(
         self, year: int, session_identifier: SessionIdentifier, grand_prix: str
-    ):
+    ) -> list[DriverLapDataOut]:
         laps = self.get_laps(
             year=year, session_identifier=session_identifier, grand_prix=grand_prix
         )

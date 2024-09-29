@@ -4,15 +4,15 @@ from fastapi import APIRouter, Depends
 
 from models.session.results.query import SessionQueryRequest
 from services.laps_data.laps import LapData
-
+from services.laps_data.model import DriverLapDataOut
 
 SessionRouter = APIRouter(prefix='/session', tags=['Laps'])
 
 @SessionRouter.get('/all')
 async def get_session_laptimes(
     params: Annotated[SessionQueryRequest, Depends(SessionQueryRequest)],
-    laps_service: LapData = Depends(LapData) 
-):
+    laps_service: LapData = Depends(LapData),
+) -> list[DriverLapDataOut]:
     """
     Retrieve laptime data for given session 
     """
