@@ -3,7 +3,6 @@ name = "f1data"
 version = "0.1.0"
 description = ""
 authors = ["German <thewhitehaven04@gmail.com>"]
-readme = "README.md"
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "0.31.1"
@@ -11,7 +10,7 @@ ipykernel = "^6.29.5"
 
 
 [tool.poetry.dependencies]
-python = "3.11.9"
+python = "~3.11"
 fastf1 = "3.4.0"
 fastapi = "0.112"
 pydantic = "2.9.2"
