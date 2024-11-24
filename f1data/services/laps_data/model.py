@@ -1,25 +1,26 @@
-from typing import Literal, Optional
-from numpy import float64, int64
-from pydantic import BaseModel, Field
+from enum import StrEnum
+from pydantic import BaseModel 
 
-COMPOUND_VALUES = ["SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"]
-CompoundLiteral = Literal["SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"]
-
+class ECompound(StrEnum):
+    SOFT = "SOFT"
+    MEDIUM = "MEDIUM"
+    HARD = "HARD"
+    INTERMEDIATE = "INTERMEDIATE"
+    WET = "WET"
 
 class LapTimingData(BaseModel):
-
-    LapTime: Optional[float] = Field(nullable=True)
-    Sector1Time: Optional[float] = Field(nullable=True)
-    Sector2Time: Optional[float] = Field(nullable=True)
-    Sector3Time: Optional[float]= Field(nullable=True)
-    LapNumber: Optional[int] = Field(nullable=True)
-    Stint: Optional[int] = Field(nullable=True)
-    TyreLife: Optional[int] = Field(nullable=True)
-    Position: Optional[int] = Field(nullable=True)
-    Compound: str = Field(
-        isin=COMPOUND_VALUES,
-        coerce=True,
-    )
+    LapTime: float | None
+    Sector1Time: float | None
+    Sector2Time: float | None
+    Sector3Time: float | None
+    ST1: float | None
+    ST2: float | None
+    ST3: float | None
+    LapNumber: int
+    Stint: int | None
+    TyreLife: int | None
+    Position: int | None
+    Compound: ECompound 
     IsOutlap: bool
     IsInlap: bool
 
