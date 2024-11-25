@@ -1,3 +1,4 @@
+import time
 import fastf1
 import numpy as np
 from pandas import DataFrame, isna
@@ -69,6 +70,7 @@ class LapDataResolver:
         laps.loc[:, "Sector3Time"] = laps["Sector3Time"].round(3)
 
     def _resolve_lap_data(self, laps: Laps) -> list[DriverLapDataOut]:
+        t_resolve_start = time.time()
         formatted_laps = laps[self._LAP_COLUMNS_FILTER]
         self._rename_sector_columns(formatted_laps)
         populated_laps = self._populate_with_data(formatted_laps)
@@ -76,7 +78,9 @@ class LapDataResolver:
         self._fix_floating_point_precision(populated_laps)
 
         indexed_data = populated_laps.set_index(self._INDEX)
+        indexed_data.sort_index(inplace=True)
 
+        print(f"\n\n-------Laps resolved in {time.time() - t_resolve_start} seconds-------\n\n")
         return [
             DriverLapDataOut(
                 driver=unique_index[0],
@@ -95,23 +99,25 @@ class LapDataResolver:
         session = fastf1.get_session(
             year=year, identifier=session_identifier, gp=grand_prix
         )
-        session.load()
+        session.load(laps=True, telemetry=False, weather=False, messages=False)
 
         return session.laps
 
     async def get_laptimes(
         self, year: int, session_identifier: SessionIdentifier, grand_prix: str
     ) -> list[DriverLapDataOut]:
+        t_loading_start = time.time()
         laps = self._get_laps(
             year=year,
             session_identifier=session_identifier,
             grand_prix=grand_prix,
         )
         res = await Retry(
-            polling_interval_seconds=.2,
+            polling_interval_seconds=0.2,
             timeout_seconds=30,
             ignored_exceptions=(DataNotLoadedError,),
         ).call(self._resolve_lap_data, laps)
+        print(f"\n\n-------Laps loaded in {time.time() - t_loading_start} seconds-------\n\n")
         return res
 
     # def calculate_delta(

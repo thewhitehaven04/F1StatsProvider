@@ -7,6 +7,7 @@ class ECompound(StrEnum):
     HARD = "HARD"
     INTERMEDIATE = "INTERMEDIATE"
     WET = "WET"
+    TEST_UNKNOWN = "TEST_UNKNOWN"
 
 class LapTimingData(BaseModel):
     LapTime: float | None
