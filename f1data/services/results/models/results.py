@@ -1,20 +1,20 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DriverBaseResult(BaseModel):
     Driver: str
-    DriverNumber: str
+    DriverNumber: str = Field(coerce_numbers_to_str=True) 
     CountryCode: str
     TeamId: str
     TeamName: str
-    Position: int
+    Position: int | None
 
 
 class DriverResultDto(DriverBaseResult):
-    Time: float
+    Time: float | None
 
 class DriverQualifyingResultDto(BaseModel):
-    Q1: float
-    Q2: float
-    Q3: float
+    Q1Time: float | None
+    Q2Time: float | None
+    Q3Time: float | None
 

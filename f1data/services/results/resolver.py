@@ -39,6 +39,11 @@ class ResultsDataResolver:
                     "CountryCode": transformers.identity,
                 }
             )
+            .rename(
+                columns={
+                    "FullName": "Driver",
+                }
+            )
             .to_dict(orient="records")
         )
 
@@ -75,6 +80,11 @@ class ResultsDataResolver:
                     "CountryCode": transformers.identity,
                 }
             )
+            .rename(
+                columns={
+                    "FullName": "Driver",
+                }
+            )
             .to_dict(orient="records")
         )
 
@@ -92,7 +102,10 @@ class ResultsDataResolver:
     ):
         results = self._get_results(year, session_identifier, grand_prix)
 
-        if session_identifier == SessionIdentifier.QUALIFYING or session_identifier == SessionIdentifier.SPRINT_QUALIFYING:
+        if (
+            session_identifier == SessionIdentifier.QUALIFYING
+            or session_identifier == SessionIdentifier.SPRINT_QUALIFYING
+        ):
             return await self.retry(self._resolve_qualifying_data, results)
 
         return await self.retry(self._resolve_session_data, results)
