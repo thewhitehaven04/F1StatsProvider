@@ -19,7 +19,7 @@ class Retry:
         self._timeout = timeout_seconds
         self._ignored_exceptions = ignored_exceptions
 
-    async def call(self, cb: Callable[..., T], *args, **kwargs) -> T:
+    async def __call__(self, cb: Callable[..., T], *args, **kwargs) -> T:
         t_start = time.time()
         while time.time() - t_start < self._timeout:
             try:

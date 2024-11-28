@@ -1,8 +1,8 @@
 from typing import Annotated, Union
 from pandas import NaT, Timestamp
-from pydantic import BaseModel, ConfigDict, PlainSerializer 
+from pydantic import BaseModel, ConfigDict, PlainSerializer
 
-from models.session.Identifier import SessionIdentifier
+from core.models.queries import SessionIdentifier 
 
 
 StrTimestamp = Annotated[

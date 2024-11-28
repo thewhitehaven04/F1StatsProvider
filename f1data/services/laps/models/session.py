@@ -1,7 +1,8 @@
-from enum import Enum
+
+from enum import StrEnum
 
 
-class ClassificationStatus(str, Enum):
+class ClassificationStatus(StrEnum):
     RETIRED = 'R'
     DISQUALIFIED = 'D'
     EXCLUDED = 'E'

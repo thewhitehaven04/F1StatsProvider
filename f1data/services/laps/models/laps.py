@@ -39,3 +39,7 @@ class DriverLapData(BaseModel):
 class DriverLapDataOut(DriverLapData):
     class Config:
         to_format = "dict"
+
+class LapIdentifier:
+    driver: str | int
+    lap: int

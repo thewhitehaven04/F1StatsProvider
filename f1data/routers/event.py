@@ -1,6 +1,6 @@
 from typing import Annotated 
 from fastapi import APIRouter, Depends, Path
-from models.event.scheduled_event import ScheduledEventCollection
+from services.event_schedule.models import ScheduledEventCollection
 from services.event_schedule.event import EventsService
 
 

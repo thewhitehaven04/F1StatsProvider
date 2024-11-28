@@ -1,28 +1,31 @@
 from fastapi import Depends
-from models.session.Identifier import SessionIdentifier
-from services.laps_data.resolver import LapDataResolver
 from fastf1.core import Telemetry
+
+from core.models.queries import SessionIdentifier
+from services.laps.resolver import LapDataResolver
 
 
 class TelemetryData:
 
-    _FILTER_COLUMNS = [
-        "RPM",
-        "Speed",
-        "SessionTime",
-        "Time",
-        "nGear",
-        "Throttle",
-        "Brake",
-        "Distance",
-        "RelativeDistance",
-    ]
-
-    def __init__(self, laps_service: LapDataResolver = Depends(LapDataResolver)) -> None:
+    def __init__(
+        self, laps_service: LapDataResolver = Depends(LapDataResolver)
+    ) -> None:
         self._laps_service = laps_service
 
     def _resolve_telemetry_data(self, telemetry: Telemetry):
-        filtered = telemetry[self._FILTER_COLUMNS]
+        return telemetry[
+            [
+                "RPM",
+                "Speed",
+                "SessionTime",
+                "Time",
+                "nGear",
+                "Throttle",
+                "Brake",
+                "Distance",
+                "RelativeDistance",
+            ]
+        ]
 
     def get_lap_telemetry(
         self,
