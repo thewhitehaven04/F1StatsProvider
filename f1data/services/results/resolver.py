@@ -1,6 +1,7 @@
 import fastf1
+import pandas
 from core.models.queries import SessionIdentifier
-from fastf1.core import SessionResults, DataNotLoadedError
+from fastf1.core import SessionResults, DataNotLoadedError, Laps, Session
 
 from utils import transformers
 from utils.retry import Retry
@@ -15,41 +16,41 @@ class ResultsDataResolver:
         )
 
     @staticmethod
-    def _resolve(data: SessionResults):
-        return (
+    def _resolve_racelike_data(data: SessionResults, laps: Laps):
+        pass
+
+    @staticmethod
+    def _resolve_practice_data(data: SessionResults, laps: Laps):
+        temp = (
             data[
                 [
                     "DriverNumber",
                     "FullName",
                     "TeamName",
                     "TeamId",
-                    "Position",
-                    "Time",
                     "CountryCode",
                 ]
             ]
-            .transform(
-                {
-                    "DriverNumber": transformers.int_or_null,
-                    "FullName": transformers.identity,
-                    "TeamName": transformers.identity,
-                    "TeamId": transformers.identity,
-                    "Position": transformers.int_or_null,
-                    "Time": transformers.laptime_to_seconds,
-                    "CountryCode": transformers.identity,
-                }
-            )
             .rename(
                 columns={
                     "FullName": "Driver",
                 }
             )
+            .assign(Time=laps.groupby("DriverNumber").agg({"LapTime": "min"}))
+            .transform(
+                {
+                    "DriverNumber": lambda x: pandas.to_numeric(x, "coerce", "integer"),
+                    "Driver": transformers.identity,
+                    "TeamName": transformers.identity,
+                    "TeamId": transformers.identity,
+                    "CountryCode": transformers.identity,
+                    "Time": transformers.laptime_to_seconds,
+                }
+            )
+            .sort_values(by=["Time"])
             .to_dict(orient="records")
         )
-
-    @staticmethod
-    def _resolve_session_data(data: SessionResults):
-        return ResultsDataResolver._resolve(data)
+        return temp
 
     @staticmethod
     def _resolve_qualifying_data(data: SessionResults):
@@ -88,24 +89,36 @@ class ResultsDataResolver:
             .to_dict(orient="records")
         )
 
-    def _get_results(
+    def _get_session(
         self, year: int, session_identifier: SessionIdentifier, grand_prix: str
-    ) -> SessionResults:
+    ) -> Session:
         session = fastf1.get_session(
             year=year, identifier=session_identifier, gp=grand_prix
         )
         session.load(laps=True, telemetry=False, weather=False, messages=False)
-        return session.results
+        return session
 
     async def get(
         self, year: int, session_identifier: SessionIdentifier, grand_prix: str
     ):
-        results = self._get_results(year, session_identifier, grand_prix)
+        session = self._get_session(year, session_identifier, grand_prix)
 
         if (
             session_identifier == SessionIdentifier.QUALIFYING
             or session_identifier == SessionIdentifier.SPRINT_QUALIFYING
         ):
-            return await self.retry(self._resolve_qualifying_data, results)
+            return await self.retry(
+                self._resolve_qualifying_data, session.results, session.laps
+            )
+        elif session_identifier in [
+            SessionIdentifier.FP1,
+            SessionIdentifier.FP2,
+            SessionIdentifier.FP3,
+        ]:
+            return await self.retry(
+                self._resolve_practice_data, session.results, session.laps
+            )
 
-        return await self.retry(self._resolve_session_data, results)
+        return await self.retry(
+            self._resolve_racelike_data, session.results, session.laps
+        )

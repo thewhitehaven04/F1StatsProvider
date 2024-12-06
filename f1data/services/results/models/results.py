@@ -7,7 +7,6 @@ class DriverBaseResult(BaseModel):
     CountryCode: str
     TeamId: str
     TeamName: str
-    Position: int | None
 
 
 class DriverResultDto(DriverBaseResult):
@@ -17,4 +16,3 @@ class DriverQualifyingResultDto(BaseModel):
     Q1Time: float | None
     Q2Time: float | None
     Q3Time: float | None
-
