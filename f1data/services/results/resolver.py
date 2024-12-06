@@ -37,16 +37,6 @@ class ResultsDataResolver:
                 }
             )
             .assign(Time=laps.groupby("DriverNumber").agg({"LapTime": "min"}))
-            .transform(
-                {
-                    "DriverNumber": lambda x: pandas.to_numeric(x, "coerce", "integer"),
-                    "Driver": transformers.identity,
-                    "TeamName": transformers.identity,
-                    "TeamId": transformers.identity,
-                    "CountryCode": transformers.identity,
-                    "Time": transformers.laptime_to_seconds,
-                }
-            )
             .sort_values(by=["Time"])
             .to_dict(orient="records")
         )
@@ -68,22 +58,12 @@ class ResultsDataResolver:
                     "CountryCode",
                 ]
             ]
-            .transform(
-                {
-                    "DriverNumber": transformers.int_or_null,
-                    "FullName": transformers.identity,
-                    "TeamName": transformers.identity,
-                    "TeamId": transformers.identity,
-                    "Position": transformers.int_or_null,
-                    "Q1": transformers.laptime_to_seconds,
-                    "Q2": transformers.laptime_to_seconds,
-                    "Q3": transformers.laptime_to_seconds,
-                    "CountryCode": transformers.identity,
-                }
-            )
             .rename(
                 columns={
                     "FullName": "Driver",
+                    "Q1": "Q1Time",
+                    "Q2": "Q2Time",
+                    "Q3": "Q3Time",
                 }
             )
             .to_dict(orient="records")
@@ -107,9 +87,7 @@ class ResultsDataResolver:
             session_identifier == SessionIdentifier.QUALIFYING
             or session_identifier == SessionIdentifier.SPRINT_QUALIFYING
         ):
-            return await self.retry(
-                self._resolve_qualifying_data, session.results, session.laps
-            )
+            return await self.retry(self._resolve_qualifying_data, session.results)
         elif session_identifier in [
             SessionIdentifier.FP1,
             SessionIdentifier.FP2,

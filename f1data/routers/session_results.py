@@ -6,7 +6,7 @@ from core.models.queries import (
     PracticeQueryRequest,
     SessionIdentifier,
 )
-from services.results.models.results import DriverResultDto
+from services.results.models.results import DriverQualifyingResultDto, DriverResultDto
 from services.results.resolver import ResultsDataResolver
 
 
@@ -37,7 +37,7 @@ async def get_race_results(
     )
 
 
-@SessionResultsRouter.get("/qualifying", response_model=list[DriverResultDto])
+@SessionResultsRouter.get("/qualifying", response_model=list[DriverQualifyingResultDto])
 async def get_qualifying_results(
     params: Annotated[EventQueryRequest, Depends()],
     results_service: ResultsDataResolver = Depends(ResultsDataResolver),
