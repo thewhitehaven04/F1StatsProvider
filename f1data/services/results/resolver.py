@@ -3,7 +3,6 @@ import pandas
 from core.models.queries import SessionIdentifier
 from fastf1.core import SessionResults, DataNotLoadedError, Laps, Session
 
-from utils import transformers
 from utils.retry import Retry
 
 
@@ -16,12 +15,24 @@ class ResultsDataResolver:
         )
 
     @staticmethod
-    def _resolve_racelike_data(data: SessionResults, laps: Laps):
-        pass
+    def _resolve_racelike_data(data: SessionResults):
+
+        temp = data.rename(columns={"FullName": "Driver", "Time": "Gap"}).assign(
+            Time=pandas.Series(
+                index=data.index,
+                data=[
+                    data["Time"].iloc[0],
+                    *(data["Time"].iloc[1:].add(data["Time"].iloc[0])),
+                ],
+            )
+        )
+        temp["Gap", 0] = 0
+
+        return temp.to_dict(orient="records")
 
     @staticmethod
     def _resolve_practice_data(data: SessionResults, laps: Laps):
-        temp = (
+        return (
             data[
                 [
                     "DriverNumber",
@@ -40,7 +51,6 @@ class ResultsDataResolver:
             .sort_values(by=["Time"])
             .to_dict(orient="records")
         )
-        return temp
 
     @staticmethod
     def _resolve_qualifying_data(data: SessionResults):
@@ -97,6 +107,4 @@ class ResultsDataResolver:
                 self._resolve_practice_data, session.results, session.laps
             )
 
-        return await self.retry(
-            self._resolve_racelike_data, session.results, session.laps
-        )
+        return await self.retry(self._resolve_racelike_data, session.results)

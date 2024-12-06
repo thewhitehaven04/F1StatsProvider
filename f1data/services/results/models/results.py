@@ -1,5 +1,5 @@
 from typing import Annotated, Union
-from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, PlainSerializer 
 import pandas as pd
 
 
@@ -19,11 +19,19 @@ class DriverBaseResult(BaseModel):
     TeamName: str
 
 
-class DriverResultDto(DriverBaseResult):
+class PracticeDriverResultDto(DriverBaseResult):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     Time: NullableLaptime
 
+class RaceDriverResultDto(DriverBaseResult):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    GridPosition: int
+    Status: str 
+    Points: int
+    Time: NullableLaptime
+    Gap: NullableLaptime
 
 class DriverQualifyingResultDto(DriverBaseResult):
     model_config = ConfigDict(arbitrary_types_allowed=True)
