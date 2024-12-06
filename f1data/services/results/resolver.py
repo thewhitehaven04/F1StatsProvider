@@ -1,3 +1,4 @@
+from time import time
 import fastf1
 import pandas
 from core.models.queries import SessionIdentifier
@@ -16,19 +17,34 @@ class ResultsDataResolver:
 
     @staticmethod
     def _resolve_racelike_data(data: SessionResults):
-
-        temp = data.rename(columns={"FullName": "Driver", "Time": "Gap"}).assign(
-            Time=pandas.Series(
-                index=data.index,
-                data=[
-                    data["Time"].iloc[0],
-                    *(data["Time"].iloc[1:].add(data["Time"].iloc[0])),
-                ],
+        racelike_data = (
+            data[
+                [
+                    "DriverNumber",
+                    "FullName",
+                    "TeamName",
+                    "TeamId",
+                    "CountryCode",
+                    "Time",
+                    "GridPosition",
+                    "Status",
+                    "Points",
+                ]
+            ]
+            .rename(columns={"FullName": "Driver", "Time": "Gap"})
+            .assign(
+                Time=pandas.Series(
+                    index=data.index,
+                    data=[
+                        data["Time"].iloc[0],
+                        *(data["Time"].iloc[1:].add(data["Time"].iloc[0])),
+                    ],
+                )
             )
         )
-        temp["Gap", 0] = 0
+        racelike_data["Gap", 0] = 0
 
-        return temp.to_dict(orient="records")
+        return racelike_data.to_dict(orient="records")
 
     @staticmethod
     def _resolve_practice_data(data: SessionResults, laps: Laps):
