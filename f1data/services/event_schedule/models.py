@@ -1,17 +1,8 @@
-from typing import Annotated, Union
-from pandas import NaT, Timestamp
+from typing import Annotated 
 from pydantic import BaseModel, ConfigDict, PlainSerializer
 
 from core.models.queries import SessionIdentifier 
-
-
-StrTimestamp = Annotated[
-    Union[Timestamp, type(NaT)],
-    PlainSerializer(
-        lambda x: None if not isinstance(x, Timestamp) else x.isoformat(),
-        return_type=(str | None),
-    ),
-]
+from utils.types.timestamp import StrTimestamp
 
 
 def is_session(x: str) -> bool:

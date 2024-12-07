@@ -10,10 +10,10 @@ from services.results.models.results import DriverQualifyingResultDto, PracticeD
 from services.results.resolver import ResultsDataResolver
 
 
-SessionResultsRouter = APIRouter(prefix="/session/results", tags=["SessionResults"])
+SessionResults = APIRouter(prefix="/session/results", tags=["SessionData"])
 
 
-@SessionResultsRouter.get("/practice", response_model=list[PracticeDriverResultDto])
+@SessionResults.get("/practice", response_model=list[PracticeDriverResultDto])
 async def get_practice_results(
     params: Annotated[PracticeQueryRequest, Depends()],
     results_service: ResultsDataResolver = Depends(ResultsDataResolver),
@@ -25,7 +25,7 @@ async def get_practice_results(
     )
 
 
-@SessionResultsRouter.get("/race", response_model=list[RaceDriverResultDto])
+@SessionResults.get("/race", response_model=list[RaceDriverResultDto])
 async def get_race_results(
     params: Annotated[EventQueryRequest, Depends()],
     results_service: ResultsDataResolver = Depends(ResultsDataResolver),
@@ -37,7 +37,7 @@ async def get_race_results(
     )
 
 
-@SessionResultsRouter.get("/qualifying", response_model=list[DriverQualifyingResultDto])
+@SessionResults.get("/qualifying", response_model=list[DriverQualifyingResultDto])
 async def get_qualifying_results(
     params: Annotated[EventQueryRequest, Depends()],
     results_service: ResultsDataResolver = Depends(ResultsDataResolver),
@@ -49,7 +49,7 @@ async def get_qualifying_results(
     )
 
 
-@SessionResultsRouter.get("/sprint", response_model=list[PracticeDriverResultDto])
+@SessionResults.get("/sprint", response_model=list[PracticeDriverResultDto])
 async def get_sprint_results(
     params: Annotated[EventQueryRequest, Depends()],
     results_service: ResultsDataResolver = Depends(ResultsDataResolver),

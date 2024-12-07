@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Callable, Type, TypeVar
+from typing import Callable, TypeVar
 from asyncio import sleep
 
 
@@ -13,7 +13,7 @@ class Retry:
         self,
         polling_interval_seconds: float,
         timeout_seconds: float,
-        ignored_exceptions: tuple[Type[Exception]],
+        ignored_exceptions: tuple,
     ) -> None:
         self._polling_interval_seconds = polling_interval_seconds 
         self._timeout = timeout_seconds

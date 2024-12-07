@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers.session_laps import SessionLapsRouter
-from routers.session_results import SessionResultsRouter
+from routers.session_results import SessionResults
 from routers.event import EventRouter
 
 
@@ -15,5 +15,5 @@ app.add_middleware(
     allow_credentials=True,
 )
 app.include_router(SessionLapsRouter)
-app.include_router(SessionResultsRouter)
+app.include_router(SessionResults)
 app.include_router(EventRouter)

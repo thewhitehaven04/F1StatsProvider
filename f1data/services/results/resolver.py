@@ -1,4 +1,5 @@
 from time import time
+from fastapi import Depends
 import fastf1
 import pandas
 from core.models.queries import SessionIdentifier
