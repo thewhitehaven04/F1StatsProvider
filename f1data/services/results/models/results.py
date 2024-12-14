@@ -3,7 +3,7 @@ from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
 import pandas as pd
 
 
-NullableLaptime = Annotated[
+Laptime = Annotated[
     Union[pd.Timedelta, type(pd.NaT)],
     PlainSerializer(
         lambda x: x.total_seconds() if pd.notna(x) else None, return_type=(float | None)
@@ -22,7 +22,8 @@ class DriverBaseResult(BaseModel):
 class PracticeDriverResultDto(DriverBaseResult):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    Time: NullableLaptime
+    Time: Laptime
+    Gap: Laptime
 
 class RaceDriverResultDto(DriverBaseResult):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -30,12 +31,12 @@ class RaceDriverResultDto(DriverBaseResult):
     GridPosition: int
     Status: str 
     Points: int
-    Time: NullableLaptime
-    Gap: NullableLaptime
+    Time: Laptime
+    Gap: Laptime
 
 class DriverQualifyingResultDto(DriverBaseResult):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    Q1Time: NullableLaptime
-    Q2Time: NullableLaptime
-    Q3Time: NullableLaptime
+    Q1Time: Laptime
+    Q2Time: Laptime
+    Q3Time: Laptime

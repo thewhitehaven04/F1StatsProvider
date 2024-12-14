@@ -2,24 +2,24 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 
-from core.models.queries import SessionQueryRequest
-from services.laps.models.laps import DriverLapDataOut
+from core.models.queries import SessionPathRequest
+from services.laps.models.laps import DriverLapData
 from services.laps.resolver import LapDataResolver
 
-SessionLapsRouter = APIRouter(prefix="/session/laps", tags=["SessionLaps"])
+SessionLapsRouter = APIRouter(tags=["SessionLaps"])
 
 
 
-@SessionLapsRouter.get("/all")
+@SessionLapsRouter.get("/season/{year}/event/{event}/session/{session_identifier}/laps", tags=["Session laps"])
 async def get_session_laptimes(
-    params: Annotated[SessionQueryRequest, Depends()],
+    path: Annotated[SessionPathRequest, Depends()],
     laps_service: LapDataResolver = Depends(LapDataResolver),
-) -> list[DriverLapDataOut]:
+) -> list[DriverLapData]:
     """
     Retrieve laptime data for given session
     """
     return await laps_service.get_laptimes(
-        session_identifier=params.session_identifier,
-        grand_prix=params.event_name,
-        year=params.year,
+        session_identifier=path.session_identifier,
+        grand_prix=path.event_name,
+        year=path.year,
     )

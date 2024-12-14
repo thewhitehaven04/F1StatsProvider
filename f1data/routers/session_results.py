@@ -49,7 +49,7 @@ async def get_qualifying_results(
     )
 
 
-@SessionResults.get("/sprint", response_model=list[PracticeDriverResultDto])
+@SessionResults.get("/sprint", response_model=list[RaceDriverResultDto])
 async def get_sprint_results(
     params: Annotated[EventQueryRequest, Depends()],
     results_service: ResultsDataResolver = Depends(ResultsDataResolver),

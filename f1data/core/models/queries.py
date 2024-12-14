@@ -15,7 +15,7 @@ class SessionIdentifier(StrEnum):
     FP3 = "Practice 3"
 
 
-class SessionQueryRequest(BaseModel):
+class SessionPathRequest(BaseModel):
     year: int
     event_name: str
     session_identifier: SessionIdentifier

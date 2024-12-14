@@ -1,11 +1,9 @@
 import fastf1
-import numpy as np
 from pandas import DataFrame, isna
 from fastf1.core import Laps, DataNotLoadedError
 
 from core.models.queries import SessionIdentifier
-from services.laps.models.laps import DriverLapDataOut
-from utils import transformers
+from services.laps.models.laps import DriverLapData
 from utils.retry import Retry
 
 
@@ -35,12 +33,11 @@ class LapDataResolver:
         laps["Sector2Time"].round(3)
         laps["Sector3Time"].round(3)
 
-    def _resolve_lap_data(self, laps: Laps) -> list[DriverLapDataOut]:
+    def _resolve_lap_data(self, laps: Laps) -> list[DriverLapData]:
         formatted_laps = laps[
             [
                 "Driver",
                 "Team",
-                "LapNumber",
                 "LapTime",
                 "Sector1Time",
                 "Sector2Time",
@@ -64,29 +61,10 @@ class LapDataResolver:
         indexed_data.sort_index(inplace=True)
 
         return [
-            DriverLapDataOut(
+            DriverLapData(
                 driver=unique_index[0],
                 team=unique_index[1],
-                data=indexed_data.loc[unique_index]
-                .transform(
-                    {
-                        "LapTime": transformers.laptime_to_seconds,
-                        "Sector1Time": transformers.laptime_to_seconds,
-                        "Sector2Time": transformers.laptime_to_seconds,
-                        "Sector3Time": transformers.laptime_to_seconds,
-                        "ST1": transformers.int_or_null,
-                        "ST2": transformers.int_or_null,
-                        "ST3": transformers.int_or_null,
-                        "LapNumber": transformers.int_or_null,
-                        "Stint": transformers.int_or_null,
-                        "TyreLife": transformers.int_or_null,
-                        "Position": transformers.int_or_null,
-                        "Compound": transformers.identity,
-                        "IsOutlap": transformers.identity,
-                        "IsInlap": transformers.identity,
-                    }
-                )
-                .replace(np.nan, None),
+                data=indexed_data.loc[unique_index].to_dict(orient="records"),
             )
             for unique_index in indexed_data.index.unique()
         ]
@@ -103,7 +81,7 @@ class LapDataResolver:
 
     async def get_laptimes(
         self, year: int, session_identifier: SessionIdentifier, grand_prix: str
-    ) -> list[DriverLapDataOut]:
+    ) -> list[DriverLapData]:
         laps = self._get_laps(
             year=year,
             session_identifier=session_identifier,

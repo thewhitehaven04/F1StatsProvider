@@ -1,5 +1,19 @@
 from enum import StrEnum
-from pydantic import BaseModel 
+from math import isnan
+from typing import Annotated
+from pydantic import BaseModel, ConfigDict, PlainSerializer
+from services.results.models.results import Laptime
+
+IntOrNaN = Annotated[
+    float,
+    PlainSerializer(lambda x: None if isnan(x) else int(x), return_type=(int | None)),
+]
+
+FloatOrNaN = Annotated[
+    float,
+    PlainSerializer(lambda x: None if isnan(x) else x, return_type=(float | None)),
+]
+
 
 class ECompound(StrEnum):
     SOFT = "SOFT"
@@ -9,36 +23,32 @@ class ECompound(StrEnum):
     WET = "WET"
     TEST_UNKNOWN = "TEST_UNKNOWN"
 
+
 class LapTimingData(BaseModel):
-    LapTime: float | None
-    Sector1Time: float | None
-    Sector2Time: float | None
-    Sector3Time: float | None
-    ST1: float | None
-    ST2: float | None
-    ST3: float | None
-    LapNumber: int
-    Stint: int | None
-    TyreLife: int | None
-    Position: int | None
-    Compound: ECompound 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    LapTime: Laptime
+    Sector1Time: Laptime
+    Sector2Time: Laptime
+    Sector3Time: Laptime
+    ST1: FloatOrNaN 
+    ST2: FloatOrNaN 
+    ST3: FloatOrNaN 
+    Stint: IntOrNaN
+    TyreLife: IntOrNaN
+    Compound: ECompound
     IsOutlap: bool
     IsInlap: bool
 
 
-class LapTimingDataOut(LapTimingData):
-    class Config: 
-        to_format = "dict"
-
 class DriverLapData(BaseModel):
     driver: str
     team: str
-    data: list[LapTimingDataOut]
+    data: list[LapTimingData]
 
-
-class DriverLapDataOut(DriverLapData):
     class Config:
         to_format = "dict"
+
 
 class LapIdentifier:
     driver: str | int

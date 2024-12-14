@@ -1,5 +1,3 @@
-from time import time
-from fastapi import Depends
 import fastf1
 import pandas
 from core.models.queries import SessionIdentifier
@@ -65,7 +63,8 @@ class ResultsDataResolver:
                 }
             )
             .assign(Time=laps.groupby("DriverNumber").agg({"LapTime": "min"}))
-            .sort_values(by=["Time"])
+            .sort_values(by=["Time"], ascending=True)
+            .assign(Gap=lambda x: x["Time"].sub(x["Time"].iloc[0]))
             .to_dict(orient="records")
         )
 
