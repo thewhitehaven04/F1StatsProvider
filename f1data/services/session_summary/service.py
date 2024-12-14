@@ -23,12 +23,12 @@ class SessionSummaryService:
     def _resolve_weather_data(session: Session):
         weather = session.weather_data
         return SessionWeather(
-            air_temp_start=weather["AirTemp"].head(1).iloc[0],
-            air_temp_finish=weather["AirTemp"].tail(1).iloc[0],
-            track_temp_start=weather["TrackTemp"].head(1).iloc[0],
-            track_temp_finish=weather["TrackTemp"].tail(1).iloc[0],
-            humidity_start=weather["Humidity"].head(1).iloc[0],
-            humidity_finish=weather["Humidity"].tail(1).iloc[0],
+            air_temp_start=weather["AirTemp"].iloc[0],
+            air_temp_finish=weather["AirTemp"].iloc[-1],
+            track_temp_start=weather["TrackTemp"].iloc[0],
+            track_temp_finish=weather["TrackTemp"].iloc[-1],
+            humidity_start=weather["Humidity"].iloc[-1],
+            humidity_finish=weather["Humidity"].iloc[-1],
         )
 
     @staticmethod

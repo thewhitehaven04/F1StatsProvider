@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict 
 
 from services.session_summary.models.weather import SessionWeather
 from utils.types.timestamp import StrDatetime
