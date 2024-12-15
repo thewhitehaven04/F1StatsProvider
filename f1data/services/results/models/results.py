@@ -11,7 +11,7 @@ Laptime = Annotated[
 ]
 
 
-class DriverBaseResult(BaseModel):
+class SessionBaseResult(BaseModel):
     Driver: str
     DriverNumber: str = Field(coerce_numbers_to_str=True)
     CountryCode: str
@@ -19,13 +19,13 @@ class DriverBaseResult(BaseModel):
     TeamName: str
 
 
-class PracticeDriverResultDto(DriverBaseResult):
+class PracticeResult(SessionBaseResult):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     Time: Laptime
     Gap: Laptime
 
-class RaceDriverResultDto(DriverBaseResult):
+class RaceResult(SessionBaseResult):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     GridPosition: int
@@ -34,7 +34,7 @@ class RaceDriverResultDto(DriverBaseResult):
     Time: Laptime
     Gap: Laptime
 
-class DriverQualifyingResultDto(DriverBaseResult):
+class QualifyingResult(SessionBaseResult):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     Q1Time: Laptime

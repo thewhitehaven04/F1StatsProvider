@@ -13,6 +13,13 @@ class LapDataResolver:
         "Team",
     ]
 
+    def __init__(self) -> None:
+        self.poll = Retry(
+            polling_interval_seconds=0.2,
+            timeout_seconds=30,
+            ignored_exceptions=(DataNotLoadedError,),
+        ) 
+
     @staticmethod
     def _populate_with_data(laps: DataFrame):
         return laps.assign(
@@ -25,6 +32,7 @@ class LapDataResolver:
         laps.rename(
             columns={"SpeedI1": "ST1", "SpeedI2": "ST2", "SpeedFL": "ST3"}, inplace=True
         )
+        return laps
 
     @staticmethod
     def _fix_floating_point_precision(laps: DataFrame):
@@ -33,7 +41,15 @@ class LapDataResolver:
         laps["Sector2Time"].round(3)
         laps["Sector3Time"].round(3)
 
-    def _resolve_lap_data(self, laps: Laps) -> list[DriverLapData]:
+    @staticmethod 
+    def _filter_drivers(laps: Laps, drivers: list[str]): 
+        if len(drivers) > 0: 
+            laps = laps.pick_drivers(drivers)
+
+        return laps
+
+    def _resolve_lap_data(self, laps: Laps, drivers: list[str]) -> list[DriverLapData]:
+        laps = self._filter_drivers(laps, drivers)
         formatted_laps = laps[
             [
                 "Driver",
@@ -80,16 +96,11 @@ class LapDataResolver:
         return session.laps
 
     async def get_laptimes(
-        self, year: int, session_identifier: SessionIdentifier, grand_prix: str
+        self, year: int, session_identifier: SessionIdentifier, grand_prix: str, drivers: list[str]
     ) -> list[DriverLapData]:
         laps = self._get_laps(
             year=year,
             session_identifier=session_identifier,
             grand_prix=grand_prix,
         )
-        res = await Retry(
-            polling_interval_seconds=0.2,
-            timeout_seconds=30,
-            ignored_exceptions=(DataNotLoadedError,),
-        )(self._resolve_lap_data, laps)
-        return res
+        return await self.poll(self._resolve_lap_data, laps, drivers)

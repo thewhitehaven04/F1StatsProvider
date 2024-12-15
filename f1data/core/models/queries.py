@@ -15,12 +15,6 @@ class SessionIdentifier(StrEnum):
     FP3 = "Practice 3"
 
 
-class SessionPathRequest(BaseModel):
-    year: int
-    event_name: str
-    session_identifier: SessionIdentifier
-
-
 class EventQueryRequest(BaseModel):
     year: int
     event_name: str
@@ -34,3 +28,6 @@ class PracticeQueryRequest(BaseModel):
         SessionIdentifier.FP2,
         SessionIdentifier.FP3,
     ]
+
+class SessionQueryFilter(BaseModel):
+    drivers: list[str]
