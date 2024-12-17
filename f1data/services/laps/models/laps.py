@@ -45,7 +45,9 @@ class LapTimingData(BaseModel):
     IsBestST1: bool
     IsBestST2: bool
     IsBestST3: bool
-
+    IsPBS1: bool
+    IsPBS2: bool
+    IsPBS3: bool
 
 class DriverLapData(BaseModel):
     driver: str
