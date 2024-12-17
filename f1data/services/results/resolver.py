@@ -1,5 +1,5 @@
 import fastf1
-import pandas
+import pandas as pd
 from core.models.queries import SessionIdentifier
 from fastf1.core import SessionResults, DataNotLoadedError, Laps, Session
 
@@ -32,7 +32,7 @@ class ResultsDataResolver:
             ]
             .rename(columns={"FullName": "Driver", "Time": "Gap"})
             .assign(
-                Time=pandas.Series(
+                Time=pd.Series(
                     index=data.index,
                     data=[
                         data["Time"].iloc[0],
@@ -41,7 +41,7 @@ class ResultsDataResolver:
                 )
             )
         )
-        racelike_data["Gap", 0] = 0
+        racelike_data["Gap"].iloc[0] = pd.Timedelta(0)
 
         return racelike_data.to_dict(orient="records")
 

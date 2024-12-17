@@ -18,7 +18,7 @@ class LapDataResolver:
             polling_interval_seconds=0.2,
             timeout_seconds=30,
             ignored_exceptions=(DataNotLoadedError,),
-        ) 
+        )
 
     @staticmethod
     def _populate_with_data(laps: DataFrame):
@@ -41,11 +41,26 @@ class LapDataResolver:
         laps["Sector2Time"].round(3)
         laps["Sector3Time"].round(3)
 
-    @staticmethod 
-    def _filter_drivers(laps: Laps, drivers: list[str]): 
-        if len(drivers) > 0: 
-            laps = laps.pick_drivers(drivers)
+    @staticmethod
+    def _set_purple_sectors(laps: DataFrame):
+        return laps.assign(
+            IsBestS1=lambda x: (laps["Sector1Time"].min() == x["Sector1Time"]),
+            IsBestS2=lambda x: (laps["Sector2Time"].min() == x["Sector2Time"]),
+            IsBestS3=lambda x: (laps["Sector3Time"].min() == x["Sector3Time"]),
+        )
 
+    @staticmethod
+    def _set_purple_speedtraps(laps: DataFrame):
+        return laps.assign(
+            IsBestST1=lambda x: (laps["ST1"].min() == x["ST1"]),
+            IsBestST2=lambda x: (laps["ST2"].min() == x["ST2"]),
+            IsBestST3=lambda x: (laps["ST3"].min() == x["ST3"]),
+        )
+
+    @staticmethod
+    def _filter_drivers(laps: Laps, drivers: list[str]):
+        if len(drivers) > 0:
+            laps = laps.pick_drivers(drivers)
         return laps
 
     def _resolve_lap_data(self, laps: Laps, drivers: list[str]) -> list[DriverLapData]:
@@ -76,13 +91,16 @@ class LapDataResolver:
         indexed_data = populated_laps.set_index(self._INDEX)
         indexed_data.sort_index(inplace=True)
 
+        purple_sectors_data = self._set_purple_sectors(indexed_data)
+        purple_speedtraps_data = self._set_purple_speedtraps(purple_sectors_data)
+
         return [
             DriverLapData(
                 driver=unique_index[0],
                 team=unique_index[1],
-                data=indexed_data.loc[unique_index].to_dict(orient="records"),
+                data=purple_speedtraps_data.loc[unique_index].to_dict(orient="records"),
             )
-            for unique_index in indexed_data.index.unique()
+            for unique_index in purple_speedtraps_data.index.unique()
         ]
 
     def _get_laps(
@@ -96,7 +114,11 @@ class LapDataResolver:
         return session.laps
 
     async def get_laptimes(
-        self, year: int, session_identifier: SessionIdentifier, grand_prix: str, drivers: list[str]
+        self,
+        year: int,
+        session_identifier: SessionIdentifier,
+        grand_prix: str,
+        drivers: list[str],
     ) -> list[DriverLapData]:
         laps = self._get_laps(
             year=year,

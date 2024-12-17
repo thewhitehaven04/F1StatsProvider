@@ -39,6 +39,12 @@ class LapTimingData(BaseModel):
     Compound: ECompound
     IsOutlap: bool
     IsInlap: bool
+    IsBestS1: bool
+    IsBestS2: bool
+    IsBestS3: bool
+    IsBestST1: bool
+    IsBestST2: bool
+    IsBestST3: bool
 
 
 class DriverLapData(BaseModel):
