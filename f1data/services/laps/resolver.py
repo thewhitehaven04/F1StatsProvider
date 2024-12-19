@@ -67,22 +67,36 @@ class LapDataResolver:
 
     @staticmethod
     def _set_is_personal_best_sector(laps: DataFrame):
-        pb_s1 = laps.groupby('Driver')['Sector1Time'].min()
-        pb_s2 = laps.groupby('Driver')['Sector2Time'].min()
-        pb_s3 = laps.groupby('Driver')['Sector3Time'].min()
-        print(laps)
+        pb_s1 = laps.groupby("Driver")["Sector1Time"].min()
+        pb_s2 = laps.groupby("Driver")["Sector2Time"].min()
+        pb_s3 = laps.groupby("Driver")["Sector3Time"].min()
 
         for driver, laptime in pb_s1.items():
-            sector_times = laps[laps['Driver'] == driver]['Sector1Time']
-            laps.loc[laps['Driver'] == driver, 'IsPBS1'] = sector_times == laptime 
-        
+            sector_times = laps[laps["Driver"] == driver]["Sector1Time"]
+            laps.loc[laps["Driver"] == driver, "IsPBS1"] = sector_times == laptime
+
         for driver, laptime in pb_s2.items():
-            sector_times = laps[laps['Driver'] == driver]['Sector2Time']
-            laps.loc[laps['Driver'] == driver, 'IsPBS2'] = sector_times == laptime 
+            sector_times = laps[laps["Driver"] == driver]["Sector2Time"]
+            laps.loc[laps["Driver"] == driver, "IsPBS2"] = sector_times == laptime
 
         for driver, laptime in pb_s3.items():
-            sector_times = laps[laps['Driver'] == driver]['Sector3Time']
-            laps.loc[laps['Driver'] == driver, 'IsPBS3'] = sector_times == laptime 
+            sector_times = laps[laps["Driver"] == driver]["Sector3Time"]
+            laps.loc[laps["Driver"] == driver, "IsPBS3"] = sector_times == laptime
+
+    @staticmethod
+    def _set_is_personal_best(laps: DataFrame):
+        # this personal best returns actual personal best laptime across
+        # the whole session, unlike the built in `IsPersonalBest` attribute
+        # that returns "rolling" personal best, i.e. the personal best at that point in time
+        # which means that there are multiple personal bests in the same session
+        personal_best_laps = laps.groupby("Driver")["LapTime"].min()
+        for driver, laptime in personal_best_laps.items():
+            current_driver_laptimes = laps[laps["Driver"] == driver]["LapTime"]
+            laps.loc[laps["Driver"] == driver, "IsPB"] = (
+                laptime == current_driver_laptimes
+            )
+
+        return laps
 
     @staticmethod
     def _filter_drivers(laps: Laps, drivers: list[str]):
@@ -103,7 +117,6 @@ class LapDataResolver:
                 "SpeedI1",
                 "SpeedI2",
                 "SpeedFL",
-                "IsPersonalBest",
                 "Stint",
                 "TyreLife",
                 "Position",
@@ -115,19 +128,20 @@ class LapDataResolver:
 
         self._fix_floating_point_precision(populated_laps)
         self._set_is_personal_best_sector(populated_laps)
-        indexed_data = populated_laps.set_index(self._INDEX)
-        indexed_data.sort_index(inplace=True)
+        pb_laps = self._set_is_personal_best(populated_laps)
+        purple_sector_laps = self._set_purple_sectors(pb_laps)
+        st_laps = self._set_purple_speedtraps(purple_sector_laps)
 
-        purple_sectors_data = self._set_purple_sectors(indexed_data)
-        purple_speedtraps_data = self._set_purple_speedtraps(purple_sectors_data)
+        indexed_data = st_laps.set_index(self._INDEX)
+        indexed_data.sort_index(inplace=True)
 
         return [
             DriverLapData(
                 driver=unique_index[0],
                 team=unique_index[1],
-                data=purple_speedtraps_data.loc[unique_index].to_dict(orient="records"),
+                data=indexed_data.loc[unique_index].to_dict(orient="records"),
             )
-            for unique_index in purple_speedtraps_data.index.unique()
+            for unique_index in indexed_data.index.unique()
         ]
 
     def _get_laps(

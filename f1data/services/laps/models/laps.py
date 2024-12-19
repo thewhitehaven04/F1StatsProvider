@@ -28,6 +28,7 @@ class LapTimingData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     LapTime: Laptime
+    IsPB: bool
     Sector1Time: Laptime
     Sector2Time: Laptime
     Sector3Time: Laptime
