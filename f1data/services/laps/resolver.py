@@ -144,7 +144,7 @@ class LapDataResolver:
             for unique_index in indexed_data.index.unique()
         ]
 
-    def _get_laps(
+    def get_laps(
         self, year: int, session_identifier: SessionIdentifier, grand_prix: str
     ) -> Laps:
         session = fastf1.get_session(
@@ -161,7 +161,7 @@ class LapDataResolver:
         grand_prix: str,
         drivers: list[str],
     ) -> list[DriverLapData]:
-        laps = self._get_laps(
+        laps = self.get_laps(
             year=year,
             session_identifier=session_identifier,
             grand_prix=grand_prix,

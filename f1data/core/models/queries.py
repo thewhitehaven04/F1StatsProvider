@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import Literal
+from typing import Literal 
 
 from pydantic import BaseModel
 
@@ -31,3 +31,7 @@ class PracticeQueryRequest(BaseModel):
 
 class SessionQueryFilter(BaseModel):
     drivers: list[str]
+
+class TelemetryRequest(BaseModel):
+    driver: str
+    laps: list[int] 

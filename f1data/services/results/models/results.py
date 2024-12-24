@@ -1,14 +1,10 @@
 from typing import Annotated, Union
-from pydantic import BaseModel, ConfigDict, Field, PlainSerializer 
+from pydantic import BaseModel, ConfigDict, Field
+from f1data.core.serializers.timedelta import timedelta_serializer
 import pandas as pd
 
 
-Laptime = Annotated[
-    Union[pd.Timedelta, type(pd.NaT)],
-    PlainSerializer(
-        lambda x: x.total_seconds() if pd.notna(x) else None, return_type=(float | None)
-    ),
-]
+Laptime = Annotated[Union[pd.Timedelta, type(pd.NaT)], timedelta_serializer]
 
 
 class SessionBaseResult(BaseModel):
@@ -25,14 +21,16 @@ class PracticeResult(SessionBaseResult):
     Time: Laptime
     Gap: Laptime
 
+
 class RaceResult(SessionBaseResult):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     GridPosition: int
-    Status: str 
+    Status: str
     Points: int
     Time: Laptime
     Gap: Laptime
+
 
 class QualifyingResult(SessionBaseResult):
     model_config = ConfigDict(arbitrary_types_allowed=True)
