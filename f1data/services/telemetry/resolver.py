@@ -2,6 +2,7 @@ from datetime import timedelta
 from core.models.queries import SessionIdentifier, TelemetryRequest
 from services.laps.loader import SessionLoader
 from pandas import timedelta_range
+from fastf1.plotting import get_driver_color
 
 
 class TelemetryResolver:
@@ -51,6 +52,7 @@ class TelemetryResolver:
             response.append(
                 {
                     "driver": instance.driver,
+                    "color": get_driver_color(instance.driver, self._loader.session),
                     "telemetry": time_based_driver_telemetry.rename(
                         columns={"nGear": "Gear"}
                     )
@@ -65,6 +67,7 @@ class TelemetryResolver:
         return [
             {
                 "driver": req.driver,
+                "color": get_driver_color(req.driver, self._loader.session),
                 "telemetry": (await self._pick_lap_telemetry(req.laps, req.driver))[
                     [
                         "Throttle",

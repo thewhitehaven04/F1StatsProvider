@@ -22,4 +22,5 @@ class DriverTelemetryData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     driver: str
+    color: str
     telemetry: TelemetryData

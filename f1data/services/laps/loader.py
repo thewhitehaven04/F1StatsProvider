@@ -19,6 +19,10 @@ class SessionLoader:
         )
 
     @property
+    def session(self):
+        return self._session
+
+    @property
     async def laps(self):
         self._session.load(laps=True, telemetry=False, weather=False, messages=False)   
         return await self.poll(lambda: self._session.laps)
