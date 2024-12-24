@@ -1,5 +1,7 @@
+from datetime import timedelta
 from core.models.queries import SessionIdentifier, TelemetryRequest
 from services.laps.loader import SessionLoader
+from pandas import timedelta_range
 
 
 class TelemetryResolver:
@@ -11,37 +13,49 @@ class TelemetryResolver:
 
     async def _pick_lap_telemetry(self, laps: list[int], driver: str):
         telemetry = await self._loader.lap_telemetry
-        return telemetry.pick_driver(driver).pick_laps(laps)
+        return telemetry.pick_driver(driver).pick_laps(laps).get_telemetry()
 
     async def get_interpolated_telemetry_comparison(
         self, comparison: list[TelemetryRequest]
     ):
         response = []
-        for c in comparison:
-            driver_telemetry = await self._pick_lap_telemetry(c.laps, c.driver)
+        for instance in comparison:
+            driver_telemetry = (
+                await self._pick_lap_telemetry(instance.laps, instance.driver)
+            )[
+                [
+                    "Throttle",
+                    "nGear",
+                    "Speed",
+                    "RPM",
+                    "RelativeDistance",
+                    "Distance",
+                    "Time",
+                ]
+            ]
 
             time_based_driver_telemetry = driver_telemetry.set_index("Time")
-            for col in ["RelativeDistance", "Distance", "Speed", "RPM", "Throttle"]:
-                time_based_driver_telemetry[col] = (
-                    time_based_driver_telemetry["col"]
-                    .resample("0.125s")
-                    .mean()
-                    .interpolate("quadratic")
-                )
+            max_index = time_based_driver_telemetry.index.max()
+            new_index = timedelta_range(timedelta(seconds=0), max_index, freq="125ms")
+            time_based_driver_telemetry.reindex(new_index)
 
-            time_based_driver_telemetry["nGear"] = (
-                time_based_driver_telemetry["Gear"]
-                .resample("0.125s")
-                .nearest()
-                .interpolate("nearest")
-            )
+            for col in ["RelativeDistance", "Distance", "Speed", "Throttle"]:
+                time_based_driver_telemetry[col] = time_based_driver_telemetry[
+                    col
+                ].interpolate("quadratic")
+
+            time_based_driver_telemetry["nGear"] = time_based_driver_telemetry[
+                "nGear"
+            ].interpolate("nearest")
 
             response.append(
                 {
-                    "driver": c.driver,
+                    "driver": instance.driver,
                     "telemetry": time_based_driver_telemetry.rename(
                         columns={"nGear": "Gear"}
-                    ).to_dict(orient="list"),
+                    )
+                    .reset_index()
+                    .to_dict(orient="list", index=True),
                 }
             )
 
@@ -51,7 +65,17 @@ class TelemetryResolver:
         return [
             {
                 "driver": req.driver,
-                "telemetry": (await self._pick_lap_telemetry(req.laps, req.driver))
+                "telemetry": (await self._pick_lap_telemetry(req.laps, req.driver))[
+                    [
+                        "Throttle",
+                        "nGear",
+                        "Speed",
+                        "RPM",
+                        "RelativeDistance",
+                        "Distance",
+                        "Time",
+                    ]
+                ]
                 .rename(columns={"nGear": "Gear"})
                 .to_dict(orient="list"),
             }
