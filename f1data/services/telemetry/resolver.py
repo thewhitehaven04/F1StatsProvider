@@ -22,7 +22,7 @@ class TelemetryResolver:
         response = []
         for instance in comparison:
             driver_telemetry = (
-                await self._pick_lap_telemetry(instance.laps, instance.driver)
+                await self._pick_lap_telemetry(instance.lap_filter, instance.driver)
             )[
                 [
                     "Throttle",
@@ -68,7 +68,7 @@ class TelemetryResolver:
             {
                 "driver": req.driver,
                 "color": get_driver_color(req.driver, self._loader.session),
-                "telemetry": (await self._pick_lap_telemetry(req.laps, req.driver))[
+                "telemetry": (await self._pick_lap_telemetry(req.lap_filter, req.driver))[
                     [
                         "Throttle",
                         "nGear",

@@ -3,8 +3,6 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from services.laps.models import laps
-
 
 class SessionIdentifier(StrEnum):
     RACE = "Race"
@@ -33,7 +31,7 @@ class PracticeQueryRequest(BaseModel):
 
 class SessionQuery(BaseModel): 
     driver: str
-    lapFilter: list[int] | None
+    lap_filter: list[int] | None
 
 class SessionQueryFilter(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -41,4 +39,4 @@ class SessionQueryFilter(BaseModel):
 
 class TelemetryRequest(BaseModel):
     driver: str
-    laps: list[int] 
+    lap_filter: list[int] 

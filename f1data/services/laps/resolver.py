@@ -103,8 +103,8 @@ class LapDataResolver:
         laps_dfs = []
         if len(queries) > 0:
             for query in queries:
-                if query.lapFilter is not None:
-                        laps_dfs.append(laps.pick_driver(query.driver).pick_laps(query.lapFilter))
+                if query.lap_filter is not None:
+                        laps_dfs.append(laps.pick_driver(query.driver).pick_laps(query.lap_filter))
                 else:
                     laps_dfs.append(laps.pick_driver(query.driver))
 
