@@ -1,7 +1,9 @@
 from enum import StrEnum
-from typing import Literal 
+from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+
+from services.laps.models import laps
 
 
 class SessionIdentifier(StrEnum):
@@ -29,8 +31,13 @@ class PracticeQueryRequest(BaseModel):
         SessionIdentifier.FP3,
     ]
 
+class SessionQuery(BaseModel): 
+    driver: str
+    lapFilter: list[int] | None
+
 class SessionQueryFilter(BaseModel):
-    drivers: list[str]
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    queries: list[SessionQuery]
 
 class TelemetryRequest(BaseModel):
     driver: str

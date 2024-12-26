@@ -1,8 +1,8 @@
 import fastf1
-from pandas import DataFrame, isna
+from pandas import DataFrame, isna, concat
 from fastf1.core import Laps, DataNotLoadedError
 
-from core.models.queries import SessionIdentifier
+from core.models.queries import SessionIdentifier, SessionQuery
 from services.laps.models.laps import DriverLapData
 from utils.retry import Retry
 
@@ -99,14 +99,22 @@ class LapDataResolver:
         return laps
 
     @staticmethod
-    def _filter_drivers(laps: Laps, drivers: list[str]):
-        if len(drivers) > 0:
-            laps = laps.pick_drivers(drivers)
-        return laps
+    def _filter_session(laps: Laps, queries: list[SessionQuery]) -> Laps:
+        laps_dfs = []
+        if len(queries) > 0:
+            for query in queries:
+                if query.lapFilter is not None:
+                        laps_dfs.append(laps.pick_driver(query.driver).pick_laps(query.lapFilter))
+                else:
+                    laps_dfs.append(laps.pick_driver(query.driver))
 
-    def _resolve_lap_data(self, laps: Laps, drivers: list[str]) -> list[DriverLapData]:
-        laps = self._filter_drivers(laps, drivers)
-        formatted_laps = laps[
+        return concat(laps_dfs)  # type: ignore
+
+    def _resolve_lap_data(
+        self, laps: Laps, queries: list[SessionQuery]
+    ) -> list[DriverLapData]:
+        filtered_laps = self._filter_session(laps, queries)
+        formatted_laps = filtered_laps[
             [
                 "Driver",
                 "Team",
@@ -159,11 +167,11 @@ class LapDataResolver:
         year: int,
         session_identifier: SessionIdentifier,
         grand_prix: str,
-        drivers: list[str],
+        queries: list[SessionQuery],
     ) -> list[DriverLapData]:
         laps = self.get_laps(
             year=year,
             session_identifier=session_identifier,
             grand_prix=grand_prix,
         )
-        return await self.poll(self._resolve_lap_data, laps, drivers)
+        return await self.poll(self._resolve_lap_data, laps, queries)

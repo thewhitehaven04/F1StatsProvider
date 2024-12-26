@@ -28,7 +28,7 @@ async def get_session_laptimes(
         session_identifier=session_identifier,
         grand_prix=event,
         year=year,
-        drivers=body.drivers,
+        queries=body.queries
     )
 
 
