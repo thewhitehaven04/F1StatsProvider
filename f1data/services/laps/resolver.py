@@ -1,5 +1,5 @@
 import fastf1
-from pandas import DataFrame, isna, concat
+from pandas import DataFrame, Series, isna, concat
 from fastf1.core import Laps, DataNotLoadedError
 
 from core.models.queries import SessionIdentifier, SessionQuery
@@ -95,17 +95,16 @@ class LapDataResolver:
 
     @staticmethod
     def _filter_session(laps: Laps, queries: list[SessionQuery]) -> Laps:
-        laps_dfs = []
-        if len(queries) > 0:
-            for query in queries:
-                if query.lap_filter is not None:
-                    laps_dfs.append(
-                        laps.pick_driver(query.driver).pick_laps(query.lap_filter)
-                    )
-                else:
-                    laps_dfs.append(laps.pick_driver(query.driver))
-
-        return concat(laps_dfs)  # type: ignore
+        return concat(
+            [
+                (
+                    laps.pick_driver(query.driver).pick_laps(query.lap_filter)
+                    if query.lap_filter
+                    else laps.pick_driver(query.driver)
+                )
+                for query in queries
+            ]
+        )  # type: ignore
 
     def _resolve_lap_data(
         self, laps: Laps, queries: list[SessionQuery]
@@ -137,17 +136,19 @@ class LapDataResolver:
         purple_sector_laps = self._set_purple_sectors(pb_laps)
         data = self._set_purple_speedtraps(purple_sector_laps)
 
-        data.reset_index(inplace=True)
-        data.set_index(['Driver', 'Team'], inplace=True) 
-        data.sort_index(inplace=True)
+        data.set_index(["Driver", "Team"], inplace=True)
 
         return [
             DriverLapData(
-                driver=unique_index[0],
-                team=unique_index[1],
-                data=data.loc[unique_index].to_dict(orient="records"),
+                driver=index[0],
+                team=index[1],
+                data=(
+                    [data.loc[index].to_dict()]
+                    if isinstance(data.loc[index], Series)
+                    else data.loc[index].to_dict(orient="records")
+                ),
             )
-            for unique_index in data.index.unique()
+            for index in data.index.unique()
         ]
 
     def get_laps(
