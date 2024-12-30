@@ -8,11 +8,6 @@ from utils.retry import Retry
 
 
 class LapDataResolver:
-    _INDEX = [
-        "Driver",
-        "Team",
-    ]
-
     def __init__(self) -> None:
         self.poll = Retry(
             polling_interval_seconds=0.2,
@@ -104,7 +99,9 @@ class LapDataResolver:
         if len(queries) > 0:
             for query in queries:
                 if query.lap_filter is not None:
-                        laps_dfs.append(laps.pick_driver(query.driver).pick_laps(query.lap_filter))
+                    laps_dfs.append(
+                        laps.pick_driver(query.driver).pick_laps(query.lap_filter)
+                    )
                 else:
                     laps_dfs.append(laps.pick_driver(query.driver))
 
@@ -138,18 +135,19 @@ class LapDataResolver:
         self._set_is_personal_best_sector(populated_laps)
         pb_laps = self._set_is_personal_best(populated_laps)
         purple_sector_laps = self._set_purple_sectors(pb_laps)
-        st_laps = self._set_purple_speedtraps(purple_sector_laps)
+        data = self._set_purple_speedtraps(purple_sector_laps)
 
-        indexed_data = st_laps.set_index(self._INDEX)
-        indexed_data.sort_index(inplace=True)
+        data.reset_index(inplace=True)
+        data.set_index(['Driver', 'Team'], inplace=True) 
+        data.sort_index(inplace=True)
 
         return [
             DriverLapData(
                 driver=unique_index[0],
                 team=unique_index[1],
-                data=indexed_data.loc[unique_index].to_dict(orient="records"),
+                data=data.loc[unique_index].to_dict(orient="records"),
             )
-            for unique_index in indexed_data.index.unique()
+            for unique_index in data.index.unique()
         ]
 
     def get_laps(

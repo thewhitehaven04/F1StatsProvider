@@ -1,4 +1,5 @@
 from datetime import timedelta
+
 from core.models.queries import SessionIdentifier, TelemetryRequest
 from services.laps.loader import SessionLoader
 from pandas import timedelta_range
@@ -10,10 +11,10 @@ class TelemetryResolver:
     def __init__(
         self, year: int, session_identifier: SessionIdentifier, grand_prix: str
     ) -> None:
-        self._loader = SessionLoader(year, session_identifier, grand_prix)
+        self._session_loader = SessionLoader(year, session_identifier, grand_prix)
 
     async def _pick_lap_telemetry(self, laps: list[int], driver: str):
-        telemetry = await self._loader.lap_telemetry
+        telemetry = await self._session_loader.lap_telemetry
         return telemetry.pick_driver(driver).pick_laps(laps).get_telemetry()
 
     async def get_interpolated_telemetry_comparison(
@@ -52,7 +53,7 @@ class TelemetryResolver:
             response.append(
                 {
                     "driver": instance.driver,
-                    "color": get_driver_color(instance.driver, self._loader.session),
+                    "color": get_driver_color(instance.driver, self._session_loader.session),
                     "telemetry": time_based_driver_telemetry.rename(
                         columns={"nGear": "Gear"}
                     )
@@ -67,7 +68,7 @@ class TelemetryResolver:
         return [
             {
                 "driver": req.driver,
-                "color": get_driver_color(req.driver, self._loader.session),
+                "color": get_driver_color(req.driver, self._session_loader.session),
                 "telemetry": (await self._pick_lap_telemetry(req.lap_filter, req.driver))[
                     [
                         "Throttle",

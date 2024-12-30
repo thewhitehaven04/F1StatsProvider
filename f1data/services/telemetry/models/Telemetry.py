@@ -24,3 +24,12 @@ class DriverTelemetryData(BaseModel):
     driver: str
     color: str
     telemetry: TelemetryData
+
+
+class TelemetryTrackData(BaseModel):
+    length: float
+class SessionTelemetryData(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    telemetry: list[DriverTelemetryData]
+    track_data: TelemetryData 
