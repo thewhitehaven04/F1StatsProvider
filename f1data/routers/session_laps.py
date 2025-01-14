@@ -15,7 +15,7 @@ SessionRouter = APIRouter(tags=["Session level data"])
     response_model=list[DriverLapData],
 )
 async def get_session_laptimes(
-    year: int,
+    year: str,
     event: str,
     session_identifier: SessionIdentifier,
     body: SessionQueryFilter,
@@ -28,7 +28,7 @@ async def get_session_laptimes(
         session_identifier=session_identifier,
         grand_prix=event,
         year=year,
-        queries=body.queries
+        queries=body.queries,
     )
 
 
@@ -37,7 +37,7 @@ async def get_session_laptimes(
     response_model=list[DriverTelemetryData],
 )
 async def get_session_telemetry(
-    year: int,
+    year: str,
     event: str,
     session_identifier: SessionIdentifier,
     body: list[TelemetryRequest],
@@ -52,7 +52,7 @@ async def get_session_telemetry(
     response_model=list[DriverTelemetryData],
 )
 async def get_session_telemetry_interpolated(
-    year: int,
+    year: str,
     event: str,
     session_identifier: SessionIdentifier,
     body: list[TelemetryRequest],
@@ -60,3 +60,19 @@ async def get_session_telemetry_interpolated(
     return await TelemetryResolver(
         year=year, session_identifier=session_identifier, grand_prix=event
     ).get_interpolated_telemetry_comparison(body)
+
+
+@SessionRouter.get(
+    "/season/{year}/event/{event}/session/{session_identifier}/lap/{lap}/driver/{driver}/telemetry",
+    response_model=DriverTelemetryData,
+)
+async def get_session_lap_driver_telemetry(
+    year: str,
+    event: str,
+    session_identifier: SessionIdentifier,
+    lap: str,
+    driver: str,
+):
+    return await TelemetryResolver(
+        year=year, session_identifier=session_identifier, grand_prix=event
+    ).get_telemetry(driver=driver, lap=lap)

@@ -152,7 +152,7 @@ class LapDataResolver:
         ]
 
     def get_laps(
-        self, year: int, session_identifier: SessionIdentifier, grand_prix: str
+        self, year: str, session_identifier: SessionIdentifier, grand_prix: str
     ) -> Laps:
         session = fastf1.get_session(
             year=year, identifier=session_identifier, gp=grand_prix
@@ -163,7 +163,7 @@ class LapDataResolver:
 
     async def get_laptimes(
         self,
-        year: int,
+        year: str,
         session_identifier: SessionIdentifier,
         grand_prix: str,
         queries: list[SessionQuery],

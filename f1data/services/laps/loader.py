@@ -7,7 +7,7 @@ from fastf1.core import DataNotLoadedError
 class SessionLoader:
 
     def __init__(
-        self, year: int, session_identifier: SessionIdentifier, grand_prix: str
+        self, year: str, session_identifier: SessionIdentifier, grand_prix: str
     ) -> None:
         self.poll = Retry(
             polling_interval_seconds=0.2,
@@ -15,7 +15,7 @@ class SessionLoader:
             ignored_exceptions=(DataNotLoadedError,),
         )
         self._session = fastf1.get_session(
-            year=year, identifier=session_identifier, gp=grand_prix
+            year=int(year), identifier=session_identifier, gp=grand_prix
         )
 
     @property

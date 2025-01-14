@@ -16,12 +16,12 @@ class SessionIdentifier(StrEnum):
 
 
 class EventQueryRequest(BaseModel):
-    year: int
+    year: str 
     event_name: str
 
 
 class PracticeQueryRequest(BaseModel):
-    year: int
+    year: str 
     event_name: str
     practice: Literal[
         SessionIdentifier.FP1,
