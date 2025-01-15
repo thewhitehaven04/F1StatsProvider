@@ -155,7 +155,7 @@ class LapDataResolver:
         self, year: str, session_identifier: SessionIdentifier, grand_prix: str
     ) -> Laps:
         session = fastf1.get_session(
-            year=year, identifier=session_identifier, gp=grand_prix
+            year=int(year), identifier=session_identifier, gp=grand_prix
         )
         session.load(laps=True, telemetry=False, weather=False, messages=False)
 

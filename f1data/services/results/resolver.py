@@ -1,9 +1,9 @@
 import fastf1
 import pandas as pd
-from core.models.queries import SessionIdentifier
 from fastf1.core import SessionResults, DataNotLoadedError, Laps, Session
 
-from utils.retry import Retry
+from f1data.core.models.queries import SessionIdentifier
+from f1data.utils.retry import Retry
 
 
 class ResultsDataResolver:
@@ -96,16 +96,16 @@ class ResultsDataResolver:
         )
 
     def _get_session(
-        self, year: int, session_identifier: SessionIdentifier, grand_prix: str
+        self, year: str, session_identifier: SessionIdentifier, grand_prix: str
     ) -> Session:
         session = fastf1.get_session(
-            year=year, identifier=session_identifier, gp=grand_prix
+            year=int(year), identifier=session_identifier, gp=grand_prix
         )
         session.load(laps=True, telemetry=False, weather=False, messages=False)
         return session
 
     async def get(
-        self, year: int, session_identifier: SessionIdentifier, grand_prix: str
+        self, year: str, session_identifier: SessionIdentifier, grand_prix: str
     ):
         session = self._get_session(year, session_identifier, grand_prix)
 
