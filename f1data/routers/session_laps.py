@@ -33,7 +33,7 @@ async def get_session_laptimes(
 
 
 @SessionRouter.post(
-    "/season/{year}/event/{event}/session/{session_identifier}/telemetry",
+    "/season/{year}/event/{event}/session/{session_identifier}/telemetry/compare",
     response_model=list[DriverTelemetryData],
 )
 async def get_session_telemetry(

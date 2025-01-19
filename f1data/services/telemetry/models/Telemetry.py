@@ -26,10 +26,22 @@ class DriverTelemetryData(BaseModel):
     telemetry: TelemetryData
 
 
-class TelemetryTrackData(BaseModel):
-    length: float
 class SessionTelemetryData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     telemetry: list[DriverTelemetryData]
     track_data: TelemetryData 
+
+class TelemetryComparison(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    Distance: Sequence[float]
+    Gap: Sequence[float]
+
+class DriverTelemetryComparison(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    driver: str
+    color: str  
+    gap_to: str
+    comparison: TelemetryComparison
