@@ -3,4 +3,5 @@ main.py
 **.pyc
 .vscode/
 .DS_store/
-./Playground.ipynb
+Playground.ipynb
+dist/
