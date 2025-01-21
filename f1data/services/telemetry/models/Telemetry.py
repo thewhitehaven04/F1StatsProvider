@@ -30,19 +30,27 @@ class SessionTelemetryData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     telemetry: list[DriverTelemetryData]
-    track_data: TelemetryData 
+    track_data: TelemetryData
 
-class TelemetryComparison(BaseModel):
+
+class DeltaData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     Distance: Sequence[float]
     Speed: Sequence[float]
     Gap: Sequence[float]
 
+
 class DriverTelemetryComparison(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     driver: str
-    color: str  
-    gap_to: str
-    comparison: TelemetryComparison
+    color: str
+    comparison: DeltaData
+
+
+class TelemetryComparison(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    reference: str
+    telemetries: list[DriverTelemetryComparison]

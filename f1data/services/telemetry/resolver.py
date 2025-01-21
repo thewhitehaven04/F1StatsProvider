@@ -27,7 +27,7 @@ class TelemetryResolver:
     async def get_interpolated_telemetry_comparison(
         self, comparison: list[TelemetryRequest]
     ):
-        response = []
+        telemetries = []
         telemetry = await self._session_loader.lap_telemetry
         laps = concat(
             [
@@ -48,7 +48,7 @@ class TelemetryResolver:
         )
         reference_telemetry.set_index("Time", inplace=True)
         max_index = reference_telemetry.index.max()
-        sampling_rate = "125ms"
+        sampling_rate = "200ms"
         reindexed_reference_telemetry = reference_telemetry.reindex(
             timedelta_range(
                 start=timedelta(seconds=0), end=max_index, freq=sampling_rate
@@ -93,22 +93,27 @@ class TelemetryResolver:
             reindexed_driver_telemetry["Gap"] = (
                 reindexed_reference_telemetry["Distance"]
                 .sub(reindexed_driver_telemetry["Distance"])
-                .div(reindexed_driver_telemetry["Speed"] / 3600 * 1000)
+                .div(
+                    reindexed_driver_telemetry["Speed"].rolling(2, center=True).mean()
+                    / 3.6
+                )
             )
 
             driver = cmp_lap[1]["Driver"]
-            response.append(
+            telemetries.append(
                 {
                     "driver": driver,
                     "color": get_driver_color(driver, self._session_loader.session),
-                    "gap_to": reference_lap["Driver"].iloc[0],
-                    "telemetry": reindexed_driver_telemetry.reset_index().to_dict(
+                    "comparison": reindexed_driver_telemetry.reset_index().to_dict(
                         orient="list"
                     ),
                 }
             )
 
-        return response
+        return {
+            "telemetries": telemetries,
+            "reference": reference_lap["Driver"].iloc[0],
+        }
 
     async def get_telemetry(self, driver: str, lap: str):
         telemetry = await self._pick_lap_telemetry(lap, driver)

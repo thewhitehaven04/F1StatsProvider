@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from core.models.queries import SessionIdentifier, SessionQueryFilter, TelemetryRequest
 from services.laps.models.laps import DriverLapData
 from services.laps.resolver import LapDataResolver
-from services.telemetry.models.Telemetry import DriverTelemetryComparison, DriverTelemetryData
+from services.telemetry.models.Telemetry import DriverTelemetryComparison, DriverTelemetryData, TelemetryComparison
 from services.telemetry.resolver import TelemetryResolver
 
 SessionRouter = APIRouter(tags=["Session level data"])
@@ -33,8 +33,8 @@ async def get_session_laptimes(
 
 
 @SessionRouter.post(
-    "/season/{year}/event/{event}/session/{session_identifier}/telemetry/compare",
-    response_model=list[DriverTelemetryComparison],
+    "/season/{year}/event/{event}/session/{session_identifier}/telemetry/comparison",
+    response_model=TelemetryComparison
 )
 async def get_session_telemetry(
     year: str,
