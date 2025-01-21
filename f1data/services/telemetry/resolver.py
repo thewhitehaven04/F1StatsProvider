@@ -41,72 +41,33 @@ class TelemetryResolver:
         comparison_laps = laps.loc[laps["LapTime"] != reference_laptime]
 
         # interpolate reference data
-        reference_telemetry: DataFrame = (
+        reference_telemetry = (
             telemetry.pick_driver(reference_lap["Driver"].iloc[0])
             .pick_laps(reference_lap["LapNumber"].iloc[0])
             .get_telemetry()
         )
-        reference_telemetry.set_index("Time", inplace=True)
-        max_index = reference_telemetry.index.max()
-        sampling_rate = "200ms"
-        reindexed_reference_telemetry = reference_telemetry.reindex(
-            timedelta_range(
-                start=timedelta(seconds=0), end=max_index, freq=sampling_rate
-            )
-        )
-
-        interpolate_cols = ["Distance", "Speed"]
-        reindexed_reference_telemetry[interpolate_cols] = (
-            reference_telemetry.resample(sampling_rate)["Distance", "Speed"]
-            .mean()
-            .bfill()
-        )
+        sampling_rate = "100ms"
+        reference_telemetry.resample_channels(rule=sampling_rate)
 
         # interpolate comparison data
         for cmp_lap in comparison_laps.iterrows():
-            driver_telemetry = (
-                await self._pick_laps_telemetry(
-                    cmp_lap[1]["LapNumber"], cmp_lap[1]["Driver"]
-                )
-            )[
-                [
-                    "Speed",
-                    "Distance",
-                    "Time",
-                ]
-            ]
-
-            driver_telemetry.set_index("Time", inplace=True)
-            max_index = driver_telemetry.index.max()
-            reindexed_driver_telemetry = driver_telemetry.reindex(
-                timedelta_range(
-                    start=timedelta(seconds=0), end=max_index, freq=sampling_rate
-                )
+            driver_telemetry = await self._pick_laps_telemetry(
+                cmp_lap[1]["LapNumber"], cmp_lap[1]["Driver"]
             )
 
-            reindexed_driver_telemetry[["Distance", "Speed"]] = (
-                driver_telemetry.resample(sampling_rate)["Distance", "Speed"]
-                .mean()
-                .bfill()
-            )
+            driver_telemetry.resample_channels(rule=sampling_rate)
 
-            reindexed_driver_telemetry["Gap"] = (
-                reindexed_reference_telemetry["Distance"]
-                .sub(reindexed_driver_telemetry["Distance"])
-                .div(
-                    reindexed_driver_telemetry["Speed"].rolling(2, center=True).mean()
-                    / 3.6
-                )
-            )
+            driver_speed_ms = driver_telemetry["Speed"] * 1000 / 3600
+            driver_telemetry["Gap"] = (
+                reference_telemetry["Distance"] - driver_telemetry["Distance"]
+            ) / (driver_speed_ms)
 
             driver = cmp_lap[1]["Driver"]
             telemetries.append(
                 {
                     "driver": driver,
                     "color": get_driver_color(driver, self._session_loader.session),
-                    "comparison": reindexed_driver_telemetry.reset_index().to_dict(
-                        orient="list"
-                    ),
+                    "comparison": driver_telemetry.to_dict(orient="list"),
                 }
             )
 
