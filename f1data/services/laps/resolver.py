@@ -1,6 +1,8 @@
+from functools import cache
 import fastf1
 from pandas import DataFrame, Series, isna, concat
-from fastf1.core import Laps, DataNotLoadedError
+from fastf1.core import Laps, DataNotLoadedError, Session
+from fastf1.plotting import get_driver_color
 
 from core.models.queries import SessionIdentifier, SessionQuery
 from services.laps.models.laps import DriverLapData
@@ -107,9 +109,9 @@ class LapDataResolver:
         )  # type: ignore
 
     def _resolve_lap_data(
-        self, laps: Laps, queries: list[SessionQuery]
+        self, session: Session, queries: list[SessionQuery]
     ) -> list[DriverLapData]:
-        filtered_laps = self._filter_session(laps, queries)
+        filtered_laps = self._filter_session(session.laps, queries)
         formatted_laps = filtered_laps[
             [
                 "Driver",
@@ -142,24 +144,27 @@ class LapDataResolver:
             DriverLapData(
                 driver=index[0],
                 team=index[1],
+                color=get_driver_color(identifier=index[0], session=session),
+                total_laps=len(index),
+                avg_time=data.loc[index]['LapTime'].mean(),
+                low_decile=data.loc[index]['LapTime'].quantile(0.1),
+                high_decile=data.loc[index]['LapTime'].quantile(0.9),
                 data=(
                     [data.loc[index].to_dict()]
                     if isinstance(data.loc[index], Series)
                     else data.loc[index].to_dict(orient="records")
-                ),
+                )
             )
             for index in data.index.unique()
         ]
 
-    def get_laps(
+    @cache
+    def get_session(
         self, year: str, session_identifier: SessionIdentifier, grand_prix: str
-    ) -> Laps:
-        session = fastf1.get_session(
+    ) -> Session:
+        return fastf1.get_session(
             year=int(year), identifier=session_identifier, gp=grand_prix
         )
-        session.load(laps=True, telemetry=False, weather=False, messages=False)
-
-        return session.laps
 
     async def get_laptimes(
         self,
@@ -168,9 +173,11 @@ class LapDataResolver:
         grand_prix: str,
         queries: list[SessionQuery],
     ) -> list[DriverLapData]:
-        laps = self.get_laps(
+        session = self.get_session(
             year=year,
             session_identifier=session_identifier,
             grand_prix=grand_prix,
         )
-        return await self.poll(self._resolve_lap_data, laps, queries)
+        session.load(laps=True, telemetry=False, weather=False, messages=False)
+
+        return await self.poll(self._resolve_lap_data, session, queries)

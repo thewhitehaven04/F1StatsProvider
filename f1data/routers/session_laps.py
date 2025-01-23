@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from core.models.queries import SessionIdentifier, SessionQueryFilter, TelemetryRequest
 from services.laps.models.laps import DriverLapData
 from services.laps.resolver import LapDataResolver
-from services.telemetry.models.Telemetry import DriverTelemetryComparison, DriverTelemetryData, TelemetryComparison
+from services.telemetry.models.Telemetry import DriverTelemetryData, TelemetryComparison
 from services.telemetry.resolver import TelemetryResolver
 
 SessionRouter = APIRouter(tags=["Session level data"])

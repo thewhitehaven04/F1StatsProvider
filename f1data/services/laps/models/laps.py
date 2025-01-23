@@ -51,13 +51,16 @@ class LapTimingData(BaseModel):
     IsPBS3: bool
 
 class DriverLapData(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     driver: str
     team: str
+    color: str
+    total_laps: int 
+    avg_time: Laptime 
+    low_decile: Laptime 
+    high_decile: Laptime 
     data: list[LapTimingData]
-
-    class Config:
-        to_format = "dict"
-
 
 class LapIdentifier:
     driver: str | int

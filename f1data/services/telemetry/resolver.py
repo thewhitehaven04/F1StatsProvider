@@ -1,8 +1,6 @@
-from datetime import timedelta
-
 from core.models.queries import SessionIdentifier, TelemetryRequest
 from services.laps.loader import SessionLoader
-from pandas import DataFrame, timedelta_range, concat
+from pandas import concat
 from fastf1.plotting import get_driver_color
 
 
@@ -13,8 +11,12 @@ class TelemetryResolver:
         self._session_loader = SessionLoader(year, session_identifier, grand_prix)
 
     async def _pick_laps_telemetry(self, laps: list[int], driver: str):
-        telemetry = await self._session_loader.lap_telemetry
-        return telemetry.pick_driver(driver).pick_laps(laps).get_telemetry()
+        return (
+            (await self._session_loader.lap_telemetry)
+            .pick_driver(driver)
+            .pick_laps(laps)
+            .get_telemetry()
+        )
 
     async def _pick_lap_telemetry(self, lap: str, driver: str):
         return (
