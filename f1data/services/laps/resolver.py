@@ -5,7 +5,7 @@ from fastf1.core import Laps, DataNotLoadedError, Session
 from fastf1.plotting import get_driver_color
 
 from core.models.queries import SessionIdentifier, SessionQuery
-from services.laps.models.laps import DriverLapData
+from services.laps.models.laps import DriverLapData, LapSelectionData
 from utils.retry import Retry
 
 
@@ -110,7 +110,7 @@ class LapDataResolver:
 
     def _resolve_lap_data(
         self, session: Session, queries: list[SessionQuery]
-    ) -> list[DriverLapData]:
+    ) -> LapSelectionData:
         filtered_laps = self._filter_session(session.laps, queries)
         formatted_laps = filtered_laps[
             [
@@ -140,23 +140,23 @@ class LapDataResolver:
 
         data.set_index(["Driver", "Team"], inplace=True)
 
-        return [
-            DriverLapData(
+        return LapSelectionData(
+            driver_lap_data=[DriverLapData(
                 driver=index[0],
                 team=index[1],
                 color=get_driver_color(identifier=index[0], session=session),
                 total_laps=len(index),
                 avg_time=data.loc[index]['LapTime'].mean(),
-                low_decile=data.loc[index]['LapTime'].quantile(0.1),
-                high_decile=data.loc[index]['LapTime'].quantile(0.9),
                 data=(
                     [data.loc[index].to_dict()]
                     if isinstance(data.loc[index], Series)
                     else data.loc[index].to_dict(orient="records")
                 )
-            )
-            for index in data.index.unique()
-        ]
+            ) for index in data.index.unique()],
+            low_decile=formatted_laps['LapTime'].quantile(0.1),
+            high_decile=formatted_laps['LapTime'].quantile(0.9)
+        )
+        
 
     @cache
     def get_session(
@@ -172,7 +172,7 @@ class LapDataResolver:
         session_identifier: SessionIdentifier,
         grand_prix: str,
         queries: list[SessionQuery],
-    ) -> list[DriverLapData]:
+    ) -> LapSelectionData:
         session = self.get_session(
             year=year,
             session_identifier=session_identifier,
