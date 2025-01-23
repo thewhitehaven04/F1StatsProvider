@@ -147,6 +147,11 @@ class LapDataResolver:
                 color=get_driver_color(identifier=index[0], session=session),
                 total_laps=len(index),
                 avg_time=data.loc[index]['LapTime'].mean(),
+                min_time=data.loc[index]['LapTime'].min(),
+                max_time=data.loc[index]['LapTime'].max(),
+                low_quartile=data.loc[index]['LapTime'].quantile(0.25),
+                high_quartile=data.loc[index]['LapTime'].quantile(0.75),
+                median=data.loc[index]['LapTime'].median(),
                 data=(
                     [data.loc[index].to_dict()]
                     if isinstance(data.loc[index], Series)
@@ -154,7 +159,9 @@ class LapDataResolver:
                 )
             ) for index in data.index.unique()],
             low_decile=formatted_laps['LapTime'].quantile(0.1),
-            high_decile=formatted_laps['LapTime'].quantile(0.9)
+            high_decile=formatted_laps['LapTime'].quantile(0.9),
+            min_time=formatted_laps['LapTime'].min(),
+            max_time=formatted_laps['LapTime'].max()
         )
         
 
@@ -172,7 +179,7 @@ class LapDataResolver:
         session_identifier: SessionIdentifier,
         grand_prix: str,
         queries: list[SessionQuery],
-    ) -> LapSelectionData:
+    ):
         session = self.get_session(
             year=year,
             session_identifier=session_identifier,

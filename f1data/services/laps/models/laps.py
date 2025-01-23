@@ -58,6 +58,11 @@ class DriverLapData(BaseModel):
     color: str
     total_laps: int 
     avg_time: Laptime 
+    min_time: Laptime
+    max_time: Laptime
+    median: Laptime
+    low_quartile: Laptime
+    high_quartile: Laptime
     data: list[LapTimingData]
 
 class LapSelectionData(BaseModel):
@@ -66,6 +71,8 @@ class LapSelectionData(BaseModel):
     driver_lap_data: list[DriverLapData]
     low_decile: Laptime 
     high_decile: Laptime 
+    min_time: Laptime
+    max_time: Laptime
 
 class LapIdentifier:
     driver: str | int
