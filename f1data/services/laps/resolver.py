@@ -1,10 +1,11 @@
+import time
 from pandas import DataFrame, Series, isna, concat
 from fastf1.core import Laps, DataNotLoadedError, Session
 from fastf1.plotting import get_driver_color
 
 from core.models.queries import SessionIdentifier, SessionQuery
 from services.laps.models.laps import DriverLapData, LapSelectionData
-from services.session.session import SessionLoader 
+from services.session.session import SessionLoader
 from utils.retry import Retry
 
 
@@ -38,11 +39,9 @@ def _set_purple_sectors(laps: DataFrame):
     purple_s2 = laps["Sector2Time"].min()
     purple_s3 = laps["Sector3Time"].min()
 
-    return laps.assign(
-        IsBestS1=lambda x: (purple_s1 == x["Sector1Time"]),
-        IsBestS2=lambda x: (purple_s2 == x["Sector2Time"]),
-        IsBestS3=lambda x: (purple_s3 == x["Sector3Time"]),
-    )
+    laps['IsBestS1'] = laps['Sector1Time'] == purple_s1
+    laps['IsBestS2'] = laps['Sector2Time'] == purple_s2
+    laps['IsBestS3'] = laps['Sector3Time'] == purple_s3
 
 
 def _set_purple_speedtraps(laps: DataFrame):
@@ -50,11 +49,9 @@ def _set_purple_speedtraps(laps: DataFrame):
     st2_max = laps["ST2"].max()
     st3_max = laps["ST3"].max()
 
-    return laps.assign(
-        IsBestST1=lambda x: (st1_max == x["ST1"]),
-        IsBestST2=lambda x: (st2_max == x["ST2"]),
-        IsBestST3=lambda x: (st3_max == x["ST3"]),
-    )
+    laps['IsBestST1'] = laps['ST1'] == st1_max
+    laps['IsBestST2'] = laps['ST2'] == st2_max
+    laps['IsBestST3'] = laps['ST3'] == st3_max
 
 
 def _set_is_personal_best_sector(laps: DataFrame):
@@ -126,14 +123,12 @@ def _resolve_lap_data(
     populated_laps = _populate_with_data(formatted_laps)
 
     _fix_floating_point_precision(populated_laps)
-
     _set_is_personal_best_sector(populated_laps)
+    _set_is_personal_best(populated_laps)
+    _set_purple_sectors(populated_laps)
+    _set_purple_speedtraps(populated_laps)
 
-    pb_laps = _set_is_personal_best(populated_laps)
-    purple_sector_laps = _set_purple_sectors(pb_laps)
-    data = _set_purple_speedtraps(purple_sector_laps)
-
-    data.set_index(["Driver", "Team"], inplace=True)
+    populated_laps.set_index(["Driver", "Team"], inplace=True)
 
     return LapSelectionData(
         driver_lap_data=[
@@ -142,19 +137,19 @@ def _resolve_lap_data(
                 team=index[1],
                 color=get_driver_color(identifier=index[0], session=session),
                 total_laps=len(index),
-                avg_time=data.loc[index]["LapTime"].mean(),
-                min_time=data.loc[index]["LapTime"].min(),
-                max_time=data.loc[index]["LapTime"].max(),
-                low_quartile=data.loc[index]["LapTime"].quantile(0.25),
-                high_quartile=data.loc[index]["LapTime"].quantile(0.75),
-                median=data.loc[index]["LapTime"].median(),
+                avg_time=populated_laps.loc[index]["LapTime"].mean(),
+                min_time=populated_laps.loc[index]["LapTime"].min(),
+                max_time=populated_laps.loc[index]["LapTime"].max(),
+                low_quartile=populated_laps.loc[index]["LapTime"].quantile(0.25),
+                high_quartile=populated_laps.loc[index]["LapTime"].quantile(0.75),
+                median=populated_laps.loc[index]["LapTime"].median(),
                 data=(
-                    [data.loc[index].to_dict()]
-                    if isinstance(data.loc[index], Series)
-                    else data.loc[index].to_dict(orient="records")
+                    [populated_laps.loc[index].to_dict()]
+                    if isinstance(populated_laps.loc[index], Series)
+                    else populated_laps.loc[index].to_dict(orient="records")
                 ),
             )
-            for index in data.index.unique()
+            for index in populated_laps.index.unique()
         ],
         low_decile=formatted_laps["LapTime"].quantile(0.1),
         high_decile=formatted_laps["LapTime"].quantile(0.9),
