@@ -1,190 +1,173 @@
-from functools import cache
-import fastf1
 from pandas import DataFrame, Series, isna, concat
 from fastf1.core import Laps, DataNotLoadedError, Session
 from fastf1.plotting import get_driver_color
 
 from core.models.queries import SessionIdentifier, SessionQuery
 from services.laps.models.laps import DriverLapData, LapSelectionData
+from services.session.session import SessionLoader 
 from utils.retry import Retry
 
 
-class LapDataResolver:
-    def __init__(self) -> None:
-        self.poll = Retry(
-            polling_interval_seconds=0.2,
-            timeout_seconds=30,
-            ignored_exceptions=(DataNotLoadedError,),
-        )
+retry = Retry(
+    polling_interval_seconds=0.05,
+    timeout_seconds=30,
+    ignored_exceptions=(DataNotLoadedError,),
+)
 
-    @staticmethod
-    def _populate_with_data(laps: DataFrame):
-        return laps.assign(
-            IsOutlap=isna(laps["Sector1Time"]),
-            IsInlap=isna(laps["Sector3Time"]),
-        )
 
-    @staticmethod
-    def _rename_sector_columns(laps: DataFrame):
-        laps.rename(
-            columns={"SpeedI1": "ST1", "SpeedI2": "ST2", "SpeedFL": "ST3"}, inplace=True
-        )
-        return laps
+def _populate_with_data(laps: DataFrame):
+    return laps.assign(
+        IsOutlap=isna(laps["Sector1Time"]),
+        IsInlap=isna(laps["Sector3Time"]),
+    )
 
-    @staticmethod
-    def _fix_floating_point_precision(laps: DataFrame):
-        laps["LapTime"].round(3)
-        laps["Sector1Time"].round(3)
-        laps["Sector2Time"].round(3)
-        laps["Sector3Time"].round(3)
 
-    @staticmethod
-    def _set_purple_sectors(laps: DataFrame):
-        purple_s1 = laps["Sector1Time"].min()
-        purple_s2 = laps["Sector2Time"].min()
-        purple_s3 = laps["Sector3Time"].min()
+def _rename_sector_columns(laps: DataFrame):
+    laps.rename(
+        columns={"SpeedI1": "ST1", "SpeedI2": "ST2", "SpeedFL": "ST3"}, inplace=True
+    )
+    return laps
 
-        return laps.assign(
-            IsBestS1=lambda x: (purple_s1 == x["Sector1Time"]),
-            IsBestS2=lambda x: (purple_s2 == x["Sector2Time"]),
-            IsBestS3=lambda x: (purple_s3 == x["Sector3Time"]),
-        )
 
-    @staticmethod
-    def _set_purple_speedtraps(laps: DataFrame):
-        st1_max = laps["ST1"].max()
-        st2_max = laps["ST2"].max()
-        st3_max = laps["ST3"].max()
+def _fix_floating_point_precision(laps: DataFrame):
+    laps[["LapTime", "Sector1Time", "Sector2Time", "Sector3Time"]].round(3)
 
-        return laps.assign(
-            IsBestST1=lambda x: (st1_max == x["ST1"]),
-            IsBestST2=lambda x: (st2_max == x["ST2"]),
-            IsBestST3=lambda x: (st3_max == x["ST3"]),
-        )
 
-    @staticmethod
-    def _set_is_personal_best_sector(laps: DataFrame):
-        pb_s1 = laps.groupby("Driver")["Sector1Time"].min()
-        pb_s2 = laps.groupby("Driver")["Sector2Time"].min()
-        pb_s3 = laps.groupby("Driver")["Sector3Time"].min()
+def _set_purple_sectors(laps: DataFrame):
+    purple_s1 = laps["Sector1Time"].min()
+    purple_s2 = laps["Sector2Time"].min()
+    purple_s3 = laps["Sector3Time"].min()
 
-        for driver, laptime in pb_s1.items():
-            sector_times = laps[laps["Driver"] == driver]["Sector1Time"]
-            laps.loc[laps["Driver"] == driver, "IsPBS1"] = sector_times == laptime
+    return laps.assign(
+        IsBestS1=lambda x: (purple_s1 == x["Sector1Time"]),
+        IsBestS2=lambda x: (purple_s2 == x["Sector2Time"]),
+        IsBestS3=lambda x: (purple_s3 == x["Sector3Time"]),
+    )
 
-        for driver, laptime in pb_s2.items():
-            sector_times = laps[laps["Driver"] == driver]["Sector2Time"]
-            laps.loc[laps["Driver"] == driver, "IsPBS2"] = sector_times == laptime
 
-        for driver, laptime in pb_s3.items():
-            sector_times = laps[laps["Driver"] == driver]["Sector3Time"]
-            laps.loc[laps["Driver"] == driver, "IsPBS3"] = sector_times == laptime
+def _set_purple_speedtraps(laps: DataFrame):
+    st1_max = laps["ST1"].max()
+    st2_max = laps["ST2"].max()
+    st3_max = laps["ST3"].max()
 
-    @staticmethod
-    def _set_is_personal_best(laps: DataFrame):
-        # this personal best returns actual personal best laptime across
-        # the whole session, unlike the built in `IsPersonalBest` attribute
-        # that returns "rolling" personal best, i.e. the personal best at that point in time
-        # which means that there are multiple personal bests in the same session
-        personal_best_laps = laps.groupby("Driver")["LapTime"].min()
-        for driver, laptime in personal_best_laps.items():
-            current_driver_laptimes = laps[laps["Driver"] == driver]["LapTime"]
-            laps.loc[laps["Driver"] == driver, "IsPB"] = (
-                laptime == current_driver_laptimes
+    return laps.assign(
+        IsBestST1=lambda x: (st1_max == x["ST1"]),
+        IsBestST2=lambda x: (st2_max == x["ST2"]),
+        IsBestST3=lambda x: (st3_max == x["ST3"]),
+    )
+
+
+def _set_is_personal_best_sector(laps: DataFrame):
+    pb_s1 = laps.groupby("Driver")["Sector1Time"].min()
+    pb_s2 = laps.groupby("Driver")["Sector2Time"].min()
+    pb_s3 = laps.groupby("Driver")["Sector3Time"].min()
+
+    for driver, laptime in pb_s1.items():
+        sector_times = laps[laps["Driver"] == driver]["Sector1Time"]
+        laps.loc[laps["Driver"] == driver, "IsPBS1"] = sector_times == laptime
+
+    for driver, laptime in pb_s2.items():
+        sector_times = laps[laps["Driver"] == driver]["Sector2Time"]
+        laps.loc[laps["Driver"] == driver, "IsPBS2"] = sector_times == laptime
+
+    for driver, laptime in pb_s3.items():
+        sector_times = laps[laps["Driver"] == driver]["Sector3Time"]
+        laps.loc[laps["Driver"] == driver, "IsPBS3"] = sector_times == laptime
+
+
+def _set_is_personal_best(laps: DataFrame):
+    # this personal best returns actual personal best laptime across
+    # the whole session, unlike the built in `IsPersonalBest` attribute
+    # that returns "rolling" personal best, i.e. the personal best at that point in time
+    # which means that there are multiple personal bests in the same session
+    personal_best_laps = laps.groupby("Driver")["LapTime"].min()
+    for driver, laptime in personal_best_laps.items():
+        current_driver_laptimes = laps[laps["Driver"] == driver]["LapTime"]
+        laps.loc[laps["Driver"] == driver, "IsPB"] = laptime == current_driver_laptimes
+
+    return laps
+
+
+def _filter_session(laps: Laps, queries: list[SessionQuery]) -> Laps:
+    return concat(
+        [
+            (
+                laps.pick_driver(query.driver).pick_laps(query.lap_filter)
+                if query.lap_filter
+                else laps.pick_driver(query.driver)
             )
-
-        return laps
-
-    @staticmethod
-    def _filter_session(laps: Laps, queries: list[SessionQuery]) -> Laps:
-        return concat(
-            [
-                (
-                    laps.pick_driver(query.driver).pick_laps(query.lap_filter)
-                    if query.lap_filter
-                    else laps.pick_driver(query.driver)
-                )
-                for query in queries
-            ]
-        )  # type: ignore
-
-    def _resolve_lap_data(
-        self, session: Session, queries: list[SessionQuery]
-    ) -> LapSelectionData:
-        filtered_laps = self._filter_session(session.laps, queries)
-        formatted_laps = filtered_laps[
-            [
-                "Driver",
-                "Team",
-                "LapTime",
-                "Sector1Time",
-                "Sector2Time",
-                "Sector3Time",
-                "SpeedI1",
-                "SpeedI2",
-                "SpeedFL",
-                "Stint",
-                "TyreLife",
-                "Position",
-                "Compound",
-            ]
+            for query in queries
         ]
-        self._rename_sector_columns(formatted_laps)
-        populated_laps = self._populate_with_data(formatted_laps)
+    )  # type: ignore
 
-        self._fix_floating_point_precision(populated_laps)
-        self._set_is_personal_best_sector(populated_laps)
-        pb_laps = self._set_is_personal_best(populated_laps)
-        purple_sector_laps = self._set_purple_sectors(pb_laps)
-        data = self._set_purple_speedtraps(purple_sector_laps)
 
-        data.set_index(["Driver", "Team"], inplace=True)
+def _resolve_lap_data(
+    session: Session, queries: list[SessionQuery]
+) -> LapSelectionData:
+    filtered_laps = _filter_session(session.laps, queries)
+    formatted_laps = filtered_laps[
+        [
+            "Driver",
+            "Team",
+            "LapTime",
+            "Sector1Time",
+            "Sector2Time",
+            "Sector3Time",
+            "SpeedI1",
+            "SpeedI2",
+            "SpeedFL",
+            "Stint",
+            "TyreLife",
+            "Position",
+            "Compound",
+        ]
+    ]
+    _rename_sector_columns(formatted_laps)
+    populated_laps = _populate_with_data(formatted_laps)
 
-        return LapSelectionData(
-            driver_lap_data=[DriverLapData(
+    _fix_floating_point_precision(populated_laps)
+
+    _set_is_personal_best_sector(populated_laps)
+
+    pb_laps = _set_is_personal_best(populated_laps)
+    purple_sector_laps = _set_purple_sectors(pb_laps)
+    data = _set_purple_speedtraps(purple_sector_laps)
+
+    data.set_index(["Driver", "Team"], inplace=True)
+
+    return LapSelectionData(
+        driver_lap_data=[
+            DriverLapData(
                 driver=index[0],
                 team=index[1],
                 color=get_driver_color(identifier=index[0], session=session),
                 total_laps=len(index),
-                avg_time=data.loc[index]['LapTime'].mean(),
-                min_time=data.loc[index]['LapTime'].min(),
-                max_time=data.loc[index]['LapTime'].max(),
-                low_quartile=data.loc[index]['LapTime'].quantile(0.25),
-                high_quartile=data.loc[index]['LapTime'].quantile(0.75),
-                median=data.loc[index]['LapTime'].median(),
+                avg_time=data.loc[index]["LapTime"].mean(),
+                min_time=data.loc[index]["LapTime"].min(),
+                max_time=data.loc[index]["LapTime"].max(),
+                low_quartile=data.loc[index]["LapTime"].quantile(0.25),
+                high_quartile=data.loc[index]["LapTime"].quantile(0.75),
+                median=data.loc[index]["LapTime"].median(),
                 data=(
                     [data.loc[index].to_dict()]
                     if isinstance(data.loc[index], Series)
                     else data.loc[index].to_dict(orient="records")
-                )
-            ) for index in data.index.unique()],
-            low_decile=formatted_laps['LapTime'].quantile(0.1),
-            high_decile=formatted_laps['LapTime'].quantile(0.9),
-            min_time=formatted_laps['LapTime'].min(),
-            max_time=formatted_laps['LapTime'].max()
-        )
-        
+                ),
+            )
+            for index in data.index.unique()
+        ],
+        low_decile=formatted_laps["LapTime"].quantile(0.1),
+        high_decile=formatted_laps["LapTime"].quantile(0.9),
+        min_time=formatted_laps["LapTime"].min(),
+        max_time=formatted_laps["LapTime"].max(),
+    )
 
-    @cache
-    def get_session(
-        self, year: str, session_identifier: SessionIdentifier, grand_prix: str
-    ) -> Session:
-        return fastf1.get_session(
-            year=int(year), identifier=session_identifier, gp=grand_prix
-        )
 
-    async def get_laptimes(
-        self,
-        year: str,
-        session_identifier: SessionIdentifier,
-        grand_prix: str,
-        queries: list[SessionQuery],
-    ):
-        session = self.get_session(
-            year=year,
-            session_identifier=session_identifier,
-            grand_prix=grand_prix,
-        )
-        session.load(laps=True, telemetry=False, weather=False, messages=False)
-
-        return await self.poll(self._resolve_lap_data, session, queries)
+async def get_resolved_laptime_data(
+    year: str,
+    session_identifier: SessionIdentifier,
+    grand_prix: str,
+    queries: list[SessionQuery],
+):
+    loader = SessionLoader(year, session_identifier, grand_prix)
+    return _resolve_lap_data(loader.session, queries)

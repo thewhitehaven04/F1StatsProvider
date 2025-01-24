@@ -1,5 +1,5 @@
 from core.models.queries import SessionIdentifier, TelemetryRequest
-from services.laps.loader import SessionLoader
+from services.session.session import SessionLoader
 from pandas import concat
 from fastf1.plotting import get_driver_color
 
@@ -12,7 +12,7 @@ class TelemetryResolver:
 
     async def _pick_laps_telemetry(self, laps: list[int], driver: str):
         return (
-            (await self._session_loader.lap_telemetry)
+            (await self._session_loader.telemetry)
             .pick_driver(driver)
             .pick_laps(laps)
             .get_telemetry()
@@ -20,7 +20,7 @@ class TelemetryResolver:
 
     async def _pick_lap_telemetry(self, lap: str, driver: str):
         return (
-            (await self._session_loader.lap_telemetry)
+            (await self._session_loader.telemetry)
             .pick_driver(driver)
             .pick_lap(int(lap))
             .get_telemetry()
@@ -30,7 +30,7 @@ class TelemetryResolver:
         self, comparison: list[TelemetryRequest]
     ):
         telemetries = []
-        telemetry = await self._session_loader.lap_telemetry
+        telemetry = await self._session_loader.telemetry
         laps = concat(
             [
                 telemetry.pick_drivers(req.driver).pick_laps(req.lap_filter)
