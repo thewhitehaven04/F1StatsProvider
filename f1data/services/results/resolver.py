@@ -88,7 +88,7 @@ def _resolve_qualifying_data(data: SessionResults):
 async def get_results(
     year: str, session_identifier: SessionIdentifier, grand_prix: str
 ):
-    loader = SessionLoader(year, session_identifier, grand_prix)
+    loader = SessionLoader(year, grand_prix, session_identifier)
     session = loader.session
 
     if (

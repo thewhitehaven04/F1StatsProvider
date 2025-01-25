@@ -2,7 +2,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends 
 
 
-from core.models.queries import SessionQueryFilter, TelemetryRequest
+from core.models.queries import SessionIdentifier, SessionQueryFilter, TelemetryRequest
 from services.laps.models.laps import LapSelectionData
 from services.laps.resolver import get_resolved_laptime_data
 from services.session.session import SessionLoader
@@ -31,10 +31,12 @@ async def get_session_laptimes(
     response_model=TelemetryComparison
 )
 async def get_session_telemetry(
-    loader: Annotated[SessionLoader, Depends()],
+    year: str,
+    event: str,
+    session_identifier: SessionIdentifier,
     body: list[TelemetryRequest],
 ):
-    return await get_interpolated_telemetry_comparison(loader, body)
+    return await get_interpolated_telemetry_comparison(SessionLoader(year, event, session_identifier), body)
 
 
 @SessionRouter.get(
@@ -42,8 +44,11 @@ async def get_session_telemetry(
     response_model=DriverTelemetryData,
 )
 async def get_session_lap_driver_telemetry(
-    loader: Annotated[SessionLoader, Depends()], 
+    year: str,
+    event: str,
+    session_identifier: SessionIdentifier,
     lap: str,
     driver: str,
 ):
-    return await get_telemetry(loader, driver, lap)
+    return await get_telemetry(SessionLoader(year, event, session_identifier), driver, lap)
+

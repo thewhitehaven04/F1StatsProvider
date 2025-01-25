@@ -9,15 +9,17 @@ from utils.retry import Retry
 
 # caching class methods causes memory leaks; since getting session is a one-liner call to a library, it's cached as a function
 @cache
-def get_cached_session(year: str, session_identifier: SessionIdentifier, grand_prix: str) -> Session:
-    return fastf1.get_session(year=int(year), identifier=session_identifier, gp=grand_prix)
+def get_cached_session(
+    year: str, session_identifier: SessionIdentifier, grand_prix: str
+) -> Session:
+    return fastf1.get_session(
+        year=int(year), identifier=session_identifier, gp=grand_prix
+    )
 
 
 class SessionLoader:
 
-    def __init__(
-        self, year: str, session_identifier: SessionIdentifier, event: str
-    ) -> None:
+    def __init__(self, year: str, event: str, session_identifier: SessionIdentifier) -> None:
         self.poll = Retry(
             polling_interval_seconds=0.05,
             timeout_seconds=30,

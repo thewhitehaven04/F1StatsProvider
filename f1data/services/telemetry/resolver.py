@@ -6,7 +6,9 @@ from fastf1.plotting import get_driver_color
 from fastf1.core import Telemetry, Laps
 
 
-def _pick_laps_telemetry(laps: Laps, lap_filter: Sequence[int] | int | str, driver: str) -> Telemetry:
+def _pick_laps_telemetry(
+    laps: Laps, lap_filter: Sequence[int] | int | str, driver: str
+) -> Telemetry:
     lap_filter = int(lap_filter) if isinstance(lap_filter, str) else lap_filter
     return laps.pick_driver(driver).pick_laps(lap_filter).get_telemetry()
 
@@ -62,21 +64,19 @@ async def get_interpolated_telemetry_comparison(
 
 async def get_telemetry(session_loader: SessionLoader, driver: str, lap: str):
     session = session_loader.session
-    telemetry = _pick_laps_telemetry(await session_loader.lap_telemetry, lap, driver)
+    telemetry = _pick_laps_telemetry(await session_loader.lap_telemetry, lap, driver)[
+        [
+            "Throttle",
+            "nGear",
+            "Speed",
+            "RPM",
+            "RelativeDistance",
+            "Distance",
+            "Time",
+        ]
+    ]
     return {
         "driver": driver,
         "color": get_driver_color(driver, session),
-        "telemetry": telemetry[
-            [
-                "Throttle",
-                "nGear",
-                "Speed",
-                "RPM",
-                "RelativeDistance",
-                "Distance",
-                "Time",
-            ]
-        ]
-        .rename(columns={"nGear": "Gear"})
-        .to_dict(orient="list"),
+        "telemetry": telemetry.rename(columns={"nGear": "Gear"}).to_dict(orient="list"),
     }
