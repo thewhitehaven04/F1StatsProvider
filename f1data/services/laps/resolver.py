@@ -3,7 +3,7 @@ from pandas import DataFrame, Series, isna, concat
 from fastf1.core import Laps, DataNotLoadedError, Session
 from fastf1.plotting import get_driver_color
 
-from core.models.queries import SessionIdentifier, SessionQuery
+from core.models.queries import SessionQuery
 from services.laps.models.laps import DriverLapData, LapSelectionData
 from services.session.session import SessionLoader
 from utils.retry import Retry
@@ -158,11 +158,5 @@ def _resolve_lap_data(
     )
 
 
-async def get_resolved_laptime_data(
-    year: str,
-    session_identifier: SessionIdentifier,
-    grand_prix: str,
-    queries: list[SessionQuery],
-):
-    loader = SessionLoader(year, session_identifier, grand_prix)
+async def get_resolved_laptime_data(loader: SessionLoader, queries: list[SessionQuery]):
     return _resolve_lap_data(loader.session, queries)

@@ -1,11 +1,13 @@
-from fastapi import APIRouter 
+from typing import Annotated
+from fastapi import APIRouter, Depends 
 
 
-from core.models.queries import SessionIdentifier, SessionQueryFilter, TelemetryRequest
+from core.models.queries import SessionQueryFilter, TelemetryRequest
 from services.laps.models.laps import LapSelectionData
 from services.laps.resolver import get_resolved_laptime_data
+from services.session.session import SessionLoader
 from services.telemetry.models.Telemetry import DriverTelemetryData, TelemetryComparison
-from services.telemetry.resolver import TelemetryResolver
+from services.telemetry.resolver import get_interpolated_telemetry_comparison, get_telemetry
 
 SessionRouter = APIRouter(tags=["Session level data"])
 
@@ -15,22 +17,13 @@ SessionRouter = APIRouter(tags=["Session level data"])
     response_model=LapSelectionData,
 )
 async def get_session_laptimes(
-    year: str,
-    event: str,
-    session_identifier: SessionIdentifier,
+    loader: Annotated[SessionLoader, Depends()],
     body: SessionQueryFilter,
 ):
     """
     Retrieve laptime data for given session
     """
-    res = await get_resolved_laptime_data(
-        session_identifier=session_identifier,
-        grand_prix=event,
-        year=year,
-        queries=body.queries,
-    )
-
-    return res
+    return await get_resolved_laptime_data(loader, body.queries)
 
 
 @SessionRouter.post(
@@ -38,14 +31,10 @@ async def get_session_laptimes(
     response_model=TelemetryComparison
 )
 async def get_session_telemetry(
-    year: str,
-    event: str,
-    session_identifier: SessionIdentifier,
+    loader: Annotated[SessionLoader, Depends()],
     body: list[TelemetryRequest],
 ):
-    return await TelemetryResolver(
-        year=year, session_identifier=session_identifier, grand_prix=event
-    ).get_interpolated_telemetry_comparison(body)
+    return await get_interpolated_telemetry_comparison(loader, body)
 
 
 @SessionRouter.get(
@@ -53,12 +42,8 @@ async def get_session_telemetry(
     response_model=DriverTelemetryData,
 )
 async def get_session_lap_driver_telemetry(
-    year: str,
-    event: str,
-    session_identifier: SessionIdentifier,
+    loader: Annotated[SessionLoader, Depends()], 
     lap: str,
     driver: str,
 ):
-    return await TelemetryResolver(
-        year=year, session_identifier=session_identifier, grand_prix=event
-    ).get_telemetry(driver=driver, lap=lap)
+    return await get_telemetry(loader, driver, lap)
