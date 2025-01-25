@@ -1,19 +1,11 @@
 import time
 from pandas import DataFrame, Series, isna, concat
-from fastf1.core import Laps, DataNotLoadedError, Session
+from fastf1.core import Laps, Session, Lap
 from fastf1.plotting import get_driver_color
 
 from core.models.queries import SessionQuery
 from services.laps.models.laps import DriverLapData, LapSelectionData
 from services.session.session import SessionLoader
-from utils.retry import Retry
-
-
-retry = Retry(
-    polling_interval_seconds=0.05,
-    timeout_seconds=30,
-    ignored_exceptions=(DataNotLoadedError,),
-)
 
 
 def _populate_with_data(laps: DataFrame):
@@ -39,9 +31,9 @@ def _set_purple_sectors(laps: DataFrame):
     purple_s2 = laps["Sector2Time"].min()
     purple_s3 = laps["Sector3Time"].min()
 
-    laps['IsBestS1'] = laps['Sector1Time'] == purple_s1
-    laps['IsBestS2'] = laps['Sector2Time'] == purple_s2
-    laps['IsBestS3'] = laps['Sector3Time'] == purple_s3
+    laps["IsBestS1"] = laps["Sector1Time"] == purple_s1
+    laps["IsBestS2"] = laps["Sector2Time"] == purple_s2
+    laps["IsBestS3"] = laps["Sector3Time"] == purple_s3
 
 
 def _set_purple_speedtraps(laps: DataFrame):
@@ -49,9 +41,9 @@ def _set_purple_speedtraps(laps: DataFrame):
     st2_max = laps["ST2"].max()
     st3_max = laps["ST3"].max()
 
-    laps['IsBestST1'] = laps['ST1'] == st1_max
-    laps['IsBestST2'] = laps['ST2'] == st2_max
-    laps['IsBestST3'] = laps['ST3'] == st3_max
+    laps["IsBestST1"] = laps["ST1"] == st1_max
+    laps["IsBestST2"] = laps["ST2"] == st2_max
+    laps["IsBestST3"] = laps["ST3"] == st3_max
 
 
 def _set_is_personal_best_sector(laps: DataFrame):
@@ -137,12 +129,36 @@ def _resolve_lap_data(
                 team=index[1],
                 color=get_driver_color(identifier=index[0], session=session),
                 total_laps=len(index),
-                avg_time=populated_laps.loc[index]["LapTime"].mean(),
-                min_time=populated_laps.loc[index]["LapTime"].min(),
-                max_time=populated_laps.loc[index]["LapTime"].max(),
-                low_quartile=populated_laps.loc[index]["LapTime"].quantile(0.25),
-                high_quartile=populated_laps.loc[index]["LapTime"].quantile(0.75),
-                median=populated_laps.loc[index]["LapTime"].median(),
+                avg_time=(
+                    populated_laps.loc[index]["LapTime"]
+                    if isinstance(populated_laps.loc[index], Lap)
+                    else populated_laps.loc[index]["LapTime"].mean()
+                ),
+                min_time=(
+                    populated_laps.loc[index]["LapTime"]
+                    if isinstance(populated_laps.loc[index], Lap)
+                    else populated_laps.loc[index]["LapTime"].min()
+                ),
+                max_time=(
+                    populated_laps.loc[index]["LapTime"]
+                    if isinstance(populated_laps.loc[index], Lap)
+                    else populated_laps.loc[index]["LapTime"].max()
+                ),
+                low_quartile=(
+                    populated_laps.loc[index]["LapTime"]
+                    if isinstance(populated_laps.loc[index], Lap)
+                    else populated_laps.loc[index]["LapTime"].quantile(0.25)
+                ),
+                high_quartile=(
+                    populated_laps.loc[index]["LapTime"]
+                    if isinstance(populated_laps.loc[index], Lap)
+                    else populated_laps.loc[index]["LapTime"].quantile(0.75)
+                ),
+                median=(
+                    populated_laps.loc[index]["LapTime"]
+                    if isinstance(populated_laps.loc[index], Lap)
+                    else populated_laps.loc[index]["LapTime"].median()
+                ),
                 data=(
                     [populated_laps.loc[index].to_dict()]
                     if isinstance(populated_laps.loc[index], Series)
@@ -151,8 +167,8 @@ def _resolve_lap_data(
             )
             for index in populated_laps.index.unique()
         ],
-        low_decile=formatted_laps["LapTime"].quantile(0.1), # type: ignore
-        high_decile=formatted_laps["LapTime"].quantile(0.9), # type: ignore
+        low_decile=formatted_laps["LapTime"].quantile(0.1),  # type: ignore
+        high_decile=formatted_laps["LapTime"].quantile(0.9),  # type: ignore
         min_time=formatted_laps["LapTime"].min(),
         max_time=formatted_laps["LapTime"].max(),
     )

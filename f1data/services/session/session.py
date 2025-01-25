@@ -1,7 +1,7 @@
 from functools import cache
 
 import fastf1
-from fastf1.core import DataNotLoadedError, Session, Laps
+from fastf1.core import DataNotLoadedError, Session, Laps, Telemetry
 
 from core.models.queries import SessionIdentifier
 from utils.retry import Retry
@@ -27,7 +27,7 @@ class SessionLoader:
         self._session.load()
 
     @property
-    def session(self):
+    def session(self) -> Session:
         return self._session
 
     @property
@@ -36,7 +36,7 @@ class SessionLoader:
         return await self.poll(lambda: self._session.laps)
 
     @property
-    async def car_data(self):
+    async def car_data(self) -> Telemetry:
         self._session.load(laps=False, telemetry=True, weather=False, messages=False)
         return await self.poll(lambda: self._session.car_data)
 

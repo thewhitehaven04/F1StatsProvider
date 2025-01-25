@@ -1,3 +1,4 @@
+from typing import Sequence
 from core.models.queries import TelemetryRequest
 from services.session.session import SessionLoader
 from pandas import concat
@@ -5,13 +6,9 @@ from fastf1.plotting import get_driver_color
 from fastf1.core import Telemetry, Laps
 
 
-def _pick_laps_telemetry(laps: Laps, lap_filter: list[int], driver: str) -> Telemetry:
+def _pick_laps_telemetry(laps: Laps, lap_filter: Sequence[int] | int | str, driver: str) -> Telemetry:
+    lap_filter = int(lap_filter) if isinstance(lap_filter, str) else lap_filter
     return laps.pick_driver(driver).pick_laps(lap_filter).get_telemetry()
-
-
-def _pick_lap_telemetry(laps: Laps, lap: str | int, driver: str) -> Telemetry:
-    lap = int(lap) if isinstance(lap, str) else lap
-    return laps.pick_driver(driver).pick_lap(lap).get_telemetry()
 
 
 async def get_interpolated_telemetry_comparison(
@@ -29,7 +26,7 @@ async def get_interpolated_telemetry_comparison(
     comparison_laps = concat_laps.loc[concat_laps["LapTime"] != reference_laptime]
 
     # interpolate reference data
-    reference_telemetry = _pick_lap_telemetry(
+    reference_telemetry = _pick_laps_telemetry(
         laps, reference_lap["LapNumber"].iloc[0], reference_lap["Driver"].iloc[0]
     )
     sampling_rate = "100ms"
@@ -65,7 +62,7 @@ async def get_interpolated_telemetry_comparison(
 
 async def get_telemetry(session_loader: SessionLoader, driver: str, lap: str):
     session = session_loader.session
-    telemetry = _pick_lap_telemetry(await session_loader.lap_telemetry, driver, lap)
+    telemetry = _pick_laps_telemetry(await session_loader.lap_telemetry, lap, driver)
     return {
         "driver": driver,
         "color": get_driver_color(driver, session),
