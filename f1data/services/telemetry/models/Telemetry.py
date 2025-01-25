@@ -1,10 +1,7 @@
-from typing import Annotated, Sequence, Union
-import pandas as pd
-from pydantic import BaseModel, ConfigDict
-from core.serializers.timedelta import timedelta_serializer
-
-Laptime = Annotated[Union[pd.Timedelta, type(pd.NaT)], timedelta_serializer]
-
+from typing import Sequence 
+from pandas import notna
+from pydantic import BaseModel, ConfigDict, field_serializer
+from pandas.api.typing import NaTType
 
 class TelemetryData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -13,9 +10,13 @@ class TelemetryData(BaseModel):
     Gear: Sequence[int]
     Speed: Sequence[int]
     RPM: Sequence[int]
-    Time: Sequence[Laptime]
+    Time: Sequence[float | None]
     RelativeDistance: Sequence[float]
     Distance: Sequence[float]
+
+    @field_serializer('Time', mode='plain', when_used='json', return_type=float)
+    def serialize_time(self, seq: Sequence[float | NaTType]): 
+        return [val if notna else None for val in seq] 
 
 
 class DriverTelemetryData(BaseModel):

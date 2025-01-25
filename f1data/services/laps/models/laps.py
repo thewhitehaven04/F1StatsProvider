@@ -1,6 +1,5 @@
 from enum import StrEnum
 from math import isnan
-from typing import Union
 from pandas import Timedelta, notna 
 from pandas.api.typing import NaTType
 from pydantic import BaseModel, ConfigDict, field_serializer
@@ -17,7 +16,7 @@ class ECompound(StrEnum):
 class LapTimingData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    LapTime: Timedelta
+    LapTime: Timedelta | NaTType
     IsPB: bool
     Sector1Time: Timedelta | NaTType  
     Sector2Time: Timedelta | NaTType  
@@ -49,7 +48,7 @@ class LapTimingData(BaseModel):
         when_used="json",
         return_type=float | None,
     )
-    def serialize_to_sectortime(self, val: Timedelta):
+    def serialize_to_time(self, val: Timedelta | NaTType):
         return val.total_seconds() if notna(val) else None
 
     @field_serializer(
@@ -115,7 +114,6 @@ class LapSelectionData(BaseModel):
     )
     def serialize_timedelta_to_seconds(self, val: Timedelta):
         return val.total_seconds()
-
 
 class LapIdentifier:
     driver: str | int

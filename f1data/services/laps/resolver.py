@@ -151,8 +151,8 @@ def _resolve_lap_data(
             )
             for index in populated_laps.index.unique()
         ],
-        low_decile=formatted_laps["LapTime"].quantile(0.1),
-        high_decile=formatted_laps["LapTime"].quantile(0.9),
+        low_decile=formatted_laps["LapTime"].quantile(0.1), # type: ignore
+        high_decile=formatted_laps["LapTime"].quantile(0.9), # type: ignore
         min_time=formatted_laps["LapTime"].min(),
         max_time=formatted_laps["LapTime"].max(),
     )
