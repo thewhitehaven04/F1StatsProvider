@@ -1,7 +1,6 @@
 from pandas import DataFrame, Series, isna, concat
 from fastf1.core import Laps, Session, Lap
 from fastf1.plotting import get_driver_color
-from requests import session
 
 from core.models.queries import SessionQuery
 from services.laps.models.laps import DriverLapData, LapSelectionData
@@ -174,5 +173,5 @@ async def _resolve_lap_data(
     )
 
 
-async def get_resolved_laptime_data(loader: SessionLoader, queries: list[SessionQuery]):
+async def get_resolved_laptime_data(loader: SessionLoader, queries: list[SessionQuery]) -> LapSelectionData:
     return await _resolve_lap_data(loader.session, await loader.laps, queries)

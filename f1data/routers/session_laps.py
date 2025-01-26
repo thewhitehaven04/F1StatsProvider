@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends 
+from fastapi import APIRouter, Depends, Response
 
 
 from core.models.queries import SessionQueryFilter, TelemetryRequest
@@ -7,7 +7,10 @@ from services.laps.models.laps import LapSelectionData
 from services.laps.resolver import get_resolved_laptime_data
 from services.session.session import SessionLoader
 from services.telemetry.models.Telemetry import DriverTelemetryData, TelemetryComparison
-from services.telemetry.resolver import get_interpolated_telemetry_comparison, get_telemetry
+from services.telemetry.resolver import (
+    get_interpolated_telemetry_comparison,
+    get_telemetry,
+)
 
 SessionRouter = APIRouter(tags=["Session level data"])
 
@@ -19,16 +22,18 @@ SessionRouter = APIRouter(tags=["Session level data"])
 async def get_session_laptimes(
     loader: Annotated[SessionLoader, Depends()],
     body: SessionQueryFilter,
+    response: Response
 ):
     """
     Retrieve laptime data for given session
     """
+    response.headers['Cache-Control'] = 'public, max-age=604800'
     return await get_resolved_laptime_data(loader, body.queries)
 
 
 @SessionRouter.post(
     "/season/{year}/event/{event}/session/{session_identifier}/telemetry/comparison",
-    response_model=TelemetryComparison
+    response_model=TelemetryComparison,
 )
 async def get_session_telemetry(
     loader: Annotated[SessionLoader, Depends()],
@@ -45,6 +50,7 @@ async def get_session_lap_driver_telemetry(
     loader: Annotated[SessionLoader, Depends()],
     lap: str,
     driver: str,
+    response: Response
 ):
+    response.headers['Cache-Control'] = 'public, max-age=604800'
     return await get_telemetry(loader, driver, lap)
-
