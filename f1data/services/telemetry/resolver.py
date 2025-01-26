@@ -5,6 +5,8 @@ from pandas import concat
 from fastf1.plotting import get_driver_color
 from fastf1.core import Telemetry, Laps
 
+from services.telemetry.models.Telemetry import TelemetryData
+
 
 def _pick_laps_telemetry(
     laps: Laps, lap_filter: Sequence[int] | int | str, driver: str
@@ -31,7 +33,7 @@ async def get_interpolated_telemetry_comparison(
     reference_telemetry = _pick_laps_telemetry(
         laps, reference_lap["LapNumber"].iloc[0], reference_lap["Driver"].iloc[0]
     )
-    sampling_rate = "100ms"
+    sampling_rate = "200ms"
     reference_telemetry.resample_channels(rule=sampling_rate)
 
     # interpolate comparison data
@@ -78,5 +80,5 @@ async def get_telemetry(session_loader: SessionLoader, driver: str, lap: str):
     return {
         "driver": driver,
         "color": get_driver_color(driver, session),
-        "telemetry": telemetry.rename(columns={"nGear": "Gear"}).to_dict(orient="list"),
+        "telemetry": telemetry.rename(columns={"nGear": "Gear"}).to_dict(orient="list")
     }

@@ -1,4 +1,4 @@
-from typing import List, Sequence 
+from typing import Sequence 
 from pandas import Timedelta, notna
 from pydantic import BaseModel, ConfigDict, field_serializer
 from pandas.api.typing import NaTType
@@ -10,13 +10,13 @@ class TelemetryData(BaseModel):
     Gear: Sequence[int]
     Speed: Sequence[int]
     RPM: Sequence[int]
-    Time: List[Timedelta]
+    Time: Sequence[Timedelta]
     RelativeDistance: Sequence[float]
     Distance: Sequence[float]
 
     @field_serializer('Time', mode='plain', when_used='json', return_type=Sequence[float])
-    def serialize_time(self, seq: Sequence[Timedelta | NaTType]): 
-        return [val if notna else None for val in seq] 
+    def serialize_time(self, seq: Sequence[Timedelta]): 
+        return [val.total_seconds() if notna else None for val in seq] 
 
 
 class DriverTelemetryData(BaseModel):
