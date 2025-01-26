@@ -1,7 +1,6 @@
 from typing import Sequence 
 from pandas import Timedelta, notna
 from pydantic import BaseModel, ConfigDict, field_serializer
-from pandas.api.typing import NaTType
 
 class TelemetryData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)

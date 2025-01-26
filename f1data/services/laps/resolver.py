@@ -1,7 +1,7 @@
-import time
 from pandas import DataFrame, Series, isna, concat
 from fastf1.core import Laps, Session, Lap
 from fastf1.plotting import get_driver_color
+from requests import session
 
 from core.models.queries import SessionQuery
 from services.laps.models.laps import DriverLapData, LapSelectionData
@@ -90,10 +90,10 @@ def _filter_session(laps: Laps, queries: list[SessionQuery]) -> Laps:
     )  # type: ignore
 
 
-def _resolve_lap_data(
-    session: Session, queries: list[SessionQuery]
+async def _resolve_lap_data(
+    session: Session, laps: Laps, queries: list[SessionQuery]
 ) -> LapSelectionData:
-    filtered_laps = _filter_session(session.laps, queries)
+    filtered_laps = _filter_session(laps, queries)
     formatted_laps = filtered_laps[
         [
             "Driver",
@@ -175,4 +175,4 @@ def _resolve_lap_data(
 
 
 async def get_resolved_laptime_data(loader: SessionLoader, queries: list[SessionQuery]):
-    return _resolve_lap_data(loader.session, queries)
+    return await _resolve_lap_data(loader.session, await loader.laps, queries)

@@ -5,8 +5,6 @@ from pandas import concat
 from fastf1.plotting import get_driver_color
 from fastf1.core import Telemetry, Laps
 
-from services.telemetry.models.Telemetry import TelemetryData
-
 
 def _pick_laps_telemetry(
     laps: Laps, lap_filter: Sequence[int] | int | str, driver: str

@@ -4,6 +4,7 @@ from fastf1.core import SessionResults, Laps
 from f1data.core.models.queries import SessionIdentifier
 from services.session.session import SessionLoader
 
+
 def _resolve_racelike_data(data: SessionResults):
     racelike_data = (
         data[
@@ -89,18 +90,17 @@ async def get_results(
     year: str, session_identifier: SessionIdentifier, grand_prix: str
 ):
     loader = SessionLoader(year, grand_prix, session_identifier)
-    session = loader.session
 
     if (
         session_identifier == SessionIdentifier.QUALIFYING
         or session_identifier == SessionIdentifier.SPRINT_QUALIFYING
     ):
-        return _resolve_qualifying_data(session.results)
+        return _resolve_qualifying_data(await loader.results)
     elif session_identifier in [
         SessionIdentifier.FP1,
         SessionIdentifier.FP2,
         SessionIdentifier.FP3,
     ]:
-        return _resolve_practice_data(session.results, session.laps)
+        return _resolve_practice_data(await loader.results, await loader.laps)
 
-    return _resolve_racelike_data(session.results)
+    return _resolve_racelike_data(await loader.results)
