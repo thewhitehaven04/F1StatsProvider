@@ -5,7 +5,6 @@ from core.models.queries import (
     QualiQueryRequest,
     RaceQueryRequest,
     PracticeQueryRequest,
-    SessionIdentifier,
 )
 from services.results.models.results import PracticeResult, QualifyingResult, RaceResult
 from services.results.resolver import get_results

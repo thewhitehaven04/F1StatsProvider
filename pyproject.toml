@@ -12,7 +12,7 @@ ipykernel = "^6.29.5"
 [tool.poetry.dependencies]
 python = "~3.11"
 fastf1 = "3.4.0"
-fastapi = "0.112"
+fastapi = {extras = ["standard"], version = "^0.115.7"}
 pydantic = "2.9.2"
 apscheduler = "3.11.0"
 

@@ -1,5 +1,3 @@
-from functools import cache
-
 import fastf1
 from fastf1.core import DataNotLoadedError, Session, Laps, Telemetry, SessionResults
 
@@ -7,7 +5,6 @@ from core.models.queries import SessionIdentifier
 from utils.retry import Retry
 
 
-# caching class methods causes memory leaks; since getting session is a one-liner call to a library, it's cached as a function
 def get_cached_session(
     year: str, session_identifier: SessionIdentifier, grand_prix: str
 ) -> Session:
@@ -18,7 +15,9 @@ def get_cached_session(
 
 class SessionLoader:
 
-    def __init__(self, year: str, event: str, session_identifier: SessionIdentifier) -> None:
+    def __init__(
+        self, year: str, event: str, session_identifier: SessionIdentifier
+    ) -> None:
         self.poll = Retry(
             polling_interval_seconds=0.05,
             timeout_seconds=30,
@@ -28,20 +27,20 @@ class SessionLoader:
 
     @property
     async def laps(self) -> Laps:
-        try: 
+        try:
             return self.session.laps
         except DataNotLoadedError:
             self.session.load(laps=True, telemetry=False, weather=False, messages=False)
-        finally: 
+        finally:
             return await self.poll(lambda: self.session.laps)
-    
+
     @property
     async def results(self) -> SessionResults:
-        try: 
+        try:
             return self.session.results
         except DataNotLoadedError:
             self.session.load(laps=True, telemetry=False, weather=False, messages=True)
-        finally: 
+        finally:
             return await self.poll(lambda: self.session.results)
 
     @property
@@ -51,9 +50,12 @@ class SessionLoader:
 
     @property
     async def lap_telemetry(self) -> Laps:
-        try: 
+        try:
             return self.session.laps
         except DataNotLoadedError:
             self.session.load(laps=True, telemetry=True, weather=False, messages=False)
-        finally: 
+        finally:
             return await self.poll(lambda: self.session.laps)
+
+    def load_all(self):
+        self.session.load(laps=True, telemetry=True, weather=False, messages=True)
