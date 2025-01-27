@@ -6,5 +6,4 @@ COPY /poetry.lock .
 COPY ./f1data /f1data
 RUN poetry install 
 COPY . . 
-WORKDIR /f1data
-CMD ["poetry", "run", "fastapi", "run", "--port", "8000"]
+CMD ["poetry", "run", "hypercorn", "f1data/main:app", "--bind", "::"]

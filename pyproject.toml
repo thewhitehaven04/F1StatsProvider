@@ -5,16 +5,16 @@ description = ""
 authors = ["German <thewhitehaven04@gmail.com>"]
 
 [tool.poetry.group.dev.dependencies]
-uvicorn = "0.31.1"
 ipykernel = "^6.29.5"
 
 
 [tool.poetry.dependencies]
 python = "~3.11"
 fastf1 = "3.4.0"
-fastapi = {extras = ["standard"], version = "^0.115.7"}
+fastapi = {extras = ["hypercorn"], version = "^0.115.7"}
 pydantic = "2.9.2"
 apscheduler = "3.11.0"
+hypercorn = "^0.17.3"
 
 
 [build-system]
