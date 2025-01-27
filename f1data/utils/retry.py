@@ -6,7 +6,6 @@ from asyncio import sleep
 
 T = TypeVar("T")
 
-
 class Retry:
 
     def __init__(
