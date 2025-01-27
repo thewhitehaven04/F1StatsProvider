@@ -2,7 +2,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from core.models.queries import (
-    EventQueryRequest,
+    QualiQueryRequest,
+    RaceQueryRequest,
     PracticeQueryRequest,
     SessionIdentifier,
 )
@@ -24,34 +25,23 @@ async def get_practice_results(
     )
 
 
-@SessionResults.get("/race", response_model=list[RaceResult])
-async def get_race_results(
-    params: Annotated[EventQueryRequest, Depends()],
+@SessionResults.get("/racelike", response_model=list[RaceResult])
+async def get_racelike_results(
+    params: Annotated[RaceQueryRequest, Depends()],
 ):
     return await get_results(
         year=params.year,
-        session_identifier=SessionIdentifier.RACE,
+        session_identifier=params.type,
         grand_prix=params.event_name,
     )
 
 
-@SessionResults.get("/qualifying", response_model=list[QualifyingResult])
+@SessionResults.get("/qualilike", response_model=list[QualifyingResult])
 async def get_qualifying_results(
-    params: Annotated[EventQueryRequest, Depends()],
+    params: Annotated[QualiQueryRequest, Depends()],
 ):
     return await get_results(
         year=params.year,
-        session_identifier=SessionIdentifier.QUALIFYING,
-        grand_prix=params.event_name,
-    )
-
-
-@SessionResults.get("/sprint", response_model=list[RaceResult])
-async def get_sprint_results(
-    params: Annotated[EventQueryRequest, Depends()],
-):
-    return await get_results(
-        year=params.year,
-        session_identifier=SessionIdentifier.SPRINT,
+        session_identifier=params.type,
         grand_prix=params.event_name,
     )

@@ -15,13 +15,24 @@ class SessionIdentifier(StrEnum):
     FP3 = "Practice 3"
 
 
-class EventQueryRequest(BaseModel):
-    year: str 
+class RaceQueryRequest(BaseModel):
+    year: str
     event_name: str
+    type: Literal[SessionIdentifier.SPRINT] | Literal[SessionIdentifier.RACE]
+
+
+class QualiQueryRequest(BaseModel):
+    event_name: str
+    year: str
+    type: (
+        Literal[SessionIdentifier.QUALIFYING]
+        | Literal[SessionIdentifier.SHOOTOUT]
+        | Literal[SessionIdentifier.SPRINT_QUALIFYING]
+    )
 
 
 class PracticeQueryRequest(BaseModel):
-    year: str 
+    year: str
     event_name: str
     practice: Literal[
         SessionIdentifier.FP1,
@@ -29,14 +40,17 @@ class PracticeQueryRequest(BaseModel):
         SessionIdentifier.FP3,
     ]
 
-class SessionQuery(BaseModel): 
+
+class SessionQuery(BaseModel):
     driver: str
     lap_filter: list[int] | None
+
 
 class SessionQueryFilter(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     queries: list[SessionQuery]
 
+
 class TelemetryRequest(BaseModel):
     driver: str
-    lap_filter: list[int] 
+    lap_filter: list[int]

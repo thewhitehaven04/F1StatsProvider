@@ -40,7 +40,7 @@ class SessionLoader:
         try: 
             return self.session.results
         except DataNotLoadedError:
-            self.session.load(laps=True, telemetry=False, weather=False, messages=False)
+            self.session.load(laps=True, telemetry=False, weather=False, messages=True)
         finally: 
             return await self.poll(lambda: self.session.results)
 
