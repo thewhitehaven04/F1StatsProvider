@@ -71,12 +71,12 @@ class DriverLapData(BaseModel):
     team: str
     color: str
     total_laps: int
-    avg_time: Timedelta
-    min_time: Timedelta
-    max_time: Timedelta
-    median: Timedelta
-    low_quartile: Timedelta
-    high_quartile: Timedelta
+    avg_time: Timedelta | NaTType 
+    min_time: Timedelta | NaTType
+    max_time: Timedelta | NaTType
+    median: Timedelta | NaTType
+    low_quartile: Timedelta | NaTType
+    high_quartile: Timedelta | NaTType
     data: list[LapTimingData]
 
     @field_serializer(
@@ -91,7 +91,7 @@ class DriverLapData(BaseModel):
         return_type=float,
     )
     def serialize_to_seconds(self, val: Timedelta):
-        return val.total_seconds()
+        return val.total_seconds() if notna(val) else None
 
 
 class LapSelectionData(BaseModel):
