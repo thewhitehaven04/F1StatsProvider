@@ -1,5 +1,5 @@
 from enum import StrEnum
-from math import isnan
+from math import isnan, nan
 from pandas import Timedelta, notna 
 from pandas.api.typing import NaTType
 from pydantic import BaseModel, ConfigDict, field_serializer
@@ -24,9 +24,9 @@ class LapTimingData(BaseModel):
     ST1: float
     ST2: float
     ST3: float
-    Stint: int
-    TyreLife: int
-    Compound: ECompound
+    Stint: float
+    TyreLife: float 
+    Compound: ECompound | float 
     IsOutlap: bool
     IsInlap: bool
     IsBestS1: bool
@@ -62,6 +62,10 @@ class LapTimingData(BaseModel):
     )
     def serialize_to_int(self, val: int):
         return None if isnan(val) else val
+
+    @field_serializer('Compound', mode='plain', when_used='json', return_type=ECompound | None)
+    def serialize_to_compound(self, val: str):
+        return None if val == 'nan' else val 
 
 
 class DriverLapData(BaseModel):

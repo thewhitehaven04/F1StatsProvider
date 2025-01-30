@@ -27,7 +27,6 @@ async def get_session_laptimes(
     """
     Retrieve laptime data for given session
     """
-    print(body)
     response.headers['Cache-Control'] = 'public, max-age=604800'
     return await get_resolved_laptime_data(loader, body.queries)
 
