@@ -1,7 +1,7 @@
 from typing import Annotated 
 from fastapi import APIRouter, Depends, Path
 from core.models.queries import SessionIdentifier
-from services.event_schedule.models import ScheduledEventCollection
+from services.event_schedule.models import ScheduledEvent
 from services.event_schedule.event import EventsService
 from services.session_summary.models.summary import SessionSummary
 from services.session_summary.service import SessionSummaryService
@@ -10,7 +10,7 @@ from services.session_summary.service import SessionSummaryService
 EventRouter = APIRouter(prefix="/season", tags=["Event Schedule"])
 
 
-@EventRouter.get("/{year}", response_model=ScheduledEventCollection)
+@EventRouter.get("/{year}", response_model=list[ScheduledEvent])
 async def year_events(
     year: Annotated[int, Path(title="Year")],
     event_schedule_service: EventsService = Depends(EventsService),
@@ -19,7 +19,7 @@ async def year_events(
 
 
 @EventRouter.get(
-    "/{year}/telemetry", response_model=ScheduledEventCollection
+    "/{year}/telemetry", response_model=list[ScheduledEvent]
 )
 async def year_telemetry_events(
     year: Annotated[int, Path(title="Year", gt=2018)],

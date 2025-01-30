@@ -28,7 +28,7 @@ NullableSession = Annotated[
 ]
 
 
-class ScheduledEventCollection(BaseModel):
+class ScheduledEvent(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     RoundNumber: int
