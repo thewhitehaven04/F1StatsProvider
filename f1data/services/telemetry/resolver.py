@@ -31,7 +31,8 @@ async def get_interpolated_telemetry_comparison(
     reference_telemetry = _pick_laps_telemetry(
         laps, reference_lap["LapNumber"].iloc[0], reference_lap["Driver"].iloc[0]
     )
-    sampling_rate = "200ms"
+    reference_distance = reference_telemetry["Distance"].iloc[-1]
+    sampling_rate = "250ms"
     reference_telemetry.resample_channels(rule=sampling_rate)
 
     # interpolate comparison data
@@ -41,11 +42,18 @@ async def get_interpolated_telemetry_comparison(
         )
 
         driver_telemetry.resample_channels(rule=sampling_rate)
-
-        driver_speed_ms = driver_telemetry["Speed"] * 1000 / 3600
+        driver_telemetry.reindex_like(reference_telemetry)
+        rolling_driver_speed_ms = (
+            driver_telemetry["Speed"].rolling(window=5, center=True).mean() / 3.6
+        )
         driver_telemetry["Gap"] = (
-            reference_telemetry["Distance"] - driver_telemetry["Distance"]
-        ) / (driver_speed_ms)
+            (
+                reference_telemetry["RelativeDistance"]
+                - driver_telemetry["RelativeDistance"]
+            )
+            * reference_distance
+            / (rolling_driver_speed_ms)
+        )
 
         driver = cmp_lap[1]["Driver"]
         telemetries.append(
@@ -78,5 +86,5 @@ async def get_telemetry(session_loader: SessionLoader, driver: str, lap: str):
     return {
         "driver": driver,
         "color": get_driver_color(driver, session),
-        "telemetry": telemetry.rename(columns={"nGear": "Gear"}).to_dict(orient="list")
+        "telemetry": telemetry.rename(columns={"nGear": "Gear"}).to_dict(orient="list"),
     }
