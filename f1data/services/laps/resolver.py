@@ -3,7 +3,7 @@ from fastf1.core import Laps, Session, Lap
 from fastf1.plotting import get_driver_color
 
 from core.models.queries import SessionQuery
-from services.laps.models.laps import DriverLapData, LapSelectionData 
+from services.laps.models.laps import DriverLapData, LapSelectionData
 from services.session.session import SessionLoader
 
 
@@ -121,51 +121,54 @@ async def _resolve_lap_data(
 
     populated_laps.set_index(["Driver", "Team"], inplace=True)
 
+    lap_data = [
+        DriverLapData(
+            driver=index[0],
+            team=index[1],
+            color=get_driver_color(identifier=index[0], session=session),
+            total_laps=len(index),
+            avg_time=(
+                populated_laps.loc[index]["LapTime"]
+                if isinstance(populated_laps.loc[index], Lap)
+                else populated_laps.loc[index]["LapTime"].mean()
+            ),
+            min_time=(
+                populated_laps.loc[index]["LapTime"]
+                if isinstance(populated_laps.loc[index], Lap)
+                else populated_laps.loc[index]["LapTime"].min()
+            ),
+            max_time=(
+                populated_laps.loc[index]["LapTime"]
+                if isinstance(populated_laps.loc[index], Lap)
+                else populated_laps.loc[index]["LapTime"].max()
+            ),
+            low_quartile=(
+                populated_laps.loc[index]["LapTime"]
+                if isinstance(populated_laps.loc[index], Lap)
+                else populated_laps.loc[index]["LapTime"].quantile(0.25)
+            ),
+            high_quartile=(
+                populated_laps.loc[index]["LapTime"]
+                if isinstance(populated_laps.loc[index], Lap)
+                else populated_laps.loc[index]["LapTime"].quantile(0.75)
+            ),
+            median=(
+                populated_laps.loc[index]["LapTime"]
+                if isinstance(populated_laps.loc[index], Lap)
+                else populated_laps.loc[index]["LapTime"].median()
+            ),
+            data=(
+                [populated_laps.loc[index].to_dict()]
+                if isinstance(populated_laps.loc[index], Series)
+                else populated_laps.loc[index].to_dict(orient="records")
+            ),
+        )
+        for index in populated_laps.index.unique()
+    ]
+    lap_data.sort(key=lambda x: x.min_time)
+
     return LapSelectionData(
-        driver_lap_data=[
-            DriverLapData(
-                driver=index[0],
-                team=index[1],
-                color=get_driver_color(identifier=index[0], session=session),
-                total_laps=len(index),
-                avg_time=(
-                    populated_laps.loc[index]["LapTime"]
-                    if isinstance(populated_laps.loc[index], Lap)
-                    else populated_laps.loc[index]["LapTime"].mean()
-                ),
-                min_time=(
-                    populated_laps.loc[index]["LapTime"]
-                    if isinstance(populated_laps.loc[index], Lap)
-                    else populated_laps.loc[index]["LapTime"].min()
-                ),
-                max_time=(
-                    populated_laps.loc[index]["LapTime"]
-                    if isinstance(populated_laps.loc[index], Lap)
-                    else populated_laps.loc[index]["LapTime"].max()
-                ),
-                low_quartile=(
-                    populated_laps.loc[index]["LapTime"]
-                    if isinstance(populated_laps.loc[index], Lap)
-                    else populated_laps.loc[index]["LapTime"].quantile(0.25)
-                ),
-                high_quartile=(
-                    populated_laps.loc[index]["LapTime"]
-                    if isinstance(populated_laps.loc[index], Lap)
-                    else populated_laps.loc[index]["LapTime"].quantile(0.75)
-                ),
-                median=(
-                    populated_laps.loc[index]["LapTime"]
-                    if isinstance(populated_laps.loc[index], Lap)
-                    else populated_laps.loc[index]["LapTime"].median()
-                ),
-                data=(
-                    [populated_laps.loc[index].to_dict()]
-                    if isinstance(populated_laps.loc[index], Series)
-                    else populated_laps.loc[index].to_dict(orient="records")
-                ),
-            )
-            for index in populated_laps.index.unique()
-        ],
+        driver_lap_data=lap_data,
         low_decile=formatted_laps["LapTime"].quantile(0.1),  # type: ignore
         high_decile=formatted_laps["LapTime"].quantile(0.9),  # type: ignore
         min_time=formatted_laps["LapTime"].min(),
@@ -173,5 +176,7 @@ async def _resolve_lap_data(
     )
 
 
-async def get_resolved_laptime_data(loader: SessionLoader, queries: list[SessionQuery]) -> LapSelectionData:
+async def get_resolved_laptime_data(
+    loader: SessionLoader, queries: list[SessionQuery]
+) -> LapSelectionData:
     return await _resolve_lap_data(loader.session, await loader.laps, queries)

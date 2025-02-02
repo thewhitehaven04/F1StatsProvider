@@ -88,3 +88,16 @@ async def get_telemetry(session_loader: SessionLoader, driver: str, lap: str):
         "color": get_driver_color(driver, session),
         "telemetry": telemetry.rename(columns={"nGear": "Gear"}).to_dict(orient="list"),
     }
+
+
+async def get_telemetries(
+    session_loader: SessionLoader, queries: list[TelemetryRequest]
+):
+    telemetries = []
+    for query in queries:
+        for lap in query.lap_filter:
+            telemetries.append(
+                await get_telemetry(session_loader, query.driver, str(lap))
+            )
+
+    return telemetries

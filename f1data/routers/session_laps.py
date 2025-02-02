@@ -9,6 +9,7 @@ from services.session.session import SessionLoader
 from services.telemetry.models.Telemetry import DriverTelemetryData, TelemetryComparison
 from services.telemetry.resolver import (
     get_interpolated_telemetry_comparison,
+    get_telemetries,
     get_telemetry,
 )
 
@@ -54,3 +55,10 @@ async def get_session_lap_driver_telemetry(
 ):
     response.headers['Cache-Control'] = 'public, max-age=604800'
     return await get_telemetry(loader, driver, lap)
+
+@SessionRouter.post("/season/{year}/event/{event}/session/{session_identifier}/telemeries", response_model=list[DriverTelemetryData])
+async def get_session_lap_telemetries(
+    loader: Annotated[SessionLoader, Depends()],
+    body: list[TelemetryRequest],
+):
+    return await get_telemetries(loader, body) 
