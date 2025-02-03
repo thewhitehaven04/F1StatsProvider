@@ -126,7 +126,7 @@ async def _resolve_lap_data(
             driver=index[0],
             team=index[1],
             color=get_driver_color(identifier=index[0], session=session),
-            total_laps=len(index),
+            total_laps=len(populated_laps.loc[index]),
             avg_time=(
                 populated_laps.loc[index]["LapTime"]
                 if isinstance(populated_laps.loc[index], Lap)
@@ -166,7 +166,6 @@ async def _resolve_lap_data(
         for index in populated_laps.index.unique()
     ]
     lap_data.sort(key=lambda x: x.min_time)
-
     return LapSelectionData(
         driver_lap_data=lap_data,
         low_decile=formatted_laps["LapTime"].quantile(0.1),  # type: ignore
