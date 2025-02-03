@@ -68,12 +68,9 @@ class LapTimingData(BaseModel):
         return None if val == 'nan' else val 
 
 
-class DriverLapData(BaseModel):
+class StintData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    driver: str
-    team: str
-    color: str
     total_laps: int
     avg_time: Timedelta | NaTType 
     min_time: Timedelta | NaTType
@@ -81,8 +78,7 @@ class DriverLapData(BaseModel):
     median: Timedelta | NaTType
     low_quartile: Timedelta | NaTType
     high_quartile: Timedelta | NaTType
-    data: list[LapTimingData]
-
+    
     @field_serializer(
         "avg_time",
         "min_time",
@@ -97,6 +93,15 @@ class DriverLapData(BaseModel):
     def serialize_to_seconds(self, val: Timedelta):
         return val.total_seconds() if notna(val) else None
 
+class DriverLapData(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    driver: str
+    team: str
+    color: str
+    session_data: StintData
+    stints: list[StintData]
+    laps: list[LapTimingData]
 
 class LapSelectionData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)

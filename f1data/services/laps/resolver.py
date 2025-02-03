@@ -1,9 +1,9 @@
-from pandas import DataFrame, Series, isna, concat
+from pandas import DataFrame, NamedAgg, Series, isna, concat
 from fastf1.core import Laps, Session, Lap
 from fastf1.plotting import get_driver_color
 
 from core.models.queries import SessionQuery
-from services.laps.models.laps import DriverLapData, LapSelectionData
+from services.laps.models.laps import DriverLapData, LapSelectionData, StintData
 from services.session.session import SessionLoader
 
 
@@ -126,38 +126,56 @@ async def _resolve_lap_data(
             driver=index[0],
             team=index[1],
             color=get_driver_color(identifier=index[0], session=session),
-            total_laps=len(populated_laps.loc[index]),
-            avg_time=(
-                populated_laps.loc[index]["LapTime"]
-                if isinstance(populated_laps.loc[index], Lap)
-                else populated_laps.loc[index]["LapTime"].mean()
+            stints=populated_laps.loc[index]
+            .groupby("Stint")
+            .agg(
+                avg_time=NamedAgg(column="LapTime", aggfunc="mean"),
+                min_time=NamedAgg(column="LapTime", aggfunc="min"),
+                max_time=NamedAgg(column="LapTime", aggfunc="max"),
+                low_quartile=NamedAgg(
+                    column="LapTime", aggfunc=lambda x: x.quantile(0.25)
+                ),
+                high_quartile=NamedAgg(
+                    column="LapTime", aggfunc=lambda x: x.quantile(0.75)
+                ),
+                median=NamedAgg(column="LapTime", aggfunc=lambda x: x.median()),
+                total_laps=NamedAgg(column="LapTime", aggfunc=lambda x: len(x)),
+            )
+            .to_dict(orient="records"),
+            session_data=StintData(
+                total_laps=len(populated_laps.loc[index]),
+                avg_time=(
+                    populated_laps.loc[index]["LapTime"]
+                    if isinstance(populated_laps.loc[index], Lap)
+                    else populated_laps.loc[index]["LapTime"].mean()
+                ),
+                min_time=(
+                    populated_laps.loc[index]["LapTime"]
+                    if isinstance(populated_laps.loc[index], Lap)
+                    else populated_laps.loc[index]["LapTime"].min()
+                ),
+                max_time=(
+                    populated_laps.loc[index]["LapTime"]
+                    if isinstance(populated_laps.loc[index], Lap)
+                    else populated_laps.loc[index]["LapTime"].max()
+                ),
+                low_quartile=(
+                    populated_laps.loc[index]["LapTime"]
+                    if isinstance(populated_laps.loc[index], Lap)
+                    else populated_laps.loc[index]["LapTime"].quantile(0.25)
+                ),
+                high_quartile=(
+                    populated_laps.loc[index]["LapTime"]
+                    if isinstance(populated_laps.loc[index], Lap)
+                    else populated_laps.loc[index]["LapTime"].quantile(0.75)
+                ),
+                median=(
+                    populated_laps.loc[index]["LapTime"]
+                    if isinstance(populated_laps.loc[index], Lap)
+                    else populated_laps.loc[index]["LapTime"].median()
+                ),
             ),
-            min_time=(
-                populated_laps.loc[index]["LapTime"]
-                if isinstance(populated_laps.loc[index], Lap)
-                else populated_laps.loc[index]["LapTime"].min()
-            ),
-            max_time=(
-                populated_laps.loc[index]["LapTime"]
-                if isinstance(populated_laps.loc[index], Lap)
-                else populated_laps.loc[index]["LapTime"].max()
-            ),
-            low_quartile=(
-                populated_laps.loc[index]["LapTime"]
-                if isinstance(populated_laps.loc[index], Lap)
-                else populated_laps.loc[index]["LapTime"].quantile(0.25)
-            ),
-            high_quartile=(
-                populated_laps.loc[index]["LapTime"]
-                if isinstance(populated_laps.loc[index], Lap)
-                else populated_laps.loc[index]["LapTime"].quantile(0.75)
-            ),
-            median=(
-                populated_laps.loc[index]["LapTime"]
-                if isinstance(populated_laps.loc[index], Lap)
-                else populated_laps.loc[index]["LapTime"].median()
-            ),
-            data=(
+            laps=(
                 [populated_laps.loc[index].to_dict()]
                 if isinstance(populated_laps.loc[index], Series)
                 else populated_laps.loc[index].to_dict(orient="records")
@@ -165,7 +183,7 @@ async def _resolve_lap_data(
         )
         for index in populated_laps.index.unique()
     ]
-    lap_data.sort(key=lambda x: x.min_time)
+    lap_data.sort(key=lambda x: x.session_data.min_time)
     return LapSelectionData(
         driver_lap_data=lap_data,
         low_decile=formatted_laps["LapTime"].quantile(0.1),  # type: ignore
