@@ -11,6 +11,7 @@ def _populate_with_data(laps: DataFrame):
     return laps.assign(
         IsOutlap=isna(laps["Sector1Time"]),
         IsInlap=isna(laps["Sector3Time"]),
+        IsFlyingLap=(laps["PitInTime"].isna() & laps["PitOutTime"].isna()),
     )
 
 
@@ -43,7 +44,6 @@ def _set_purple_speedtraps(laps: DataFrame):
     laps["IsBestST1"] = laps["ST1"] == st1_max
     laps["IsBestST2"] = laps["ST2"] == st2_max
     laps["IsBestST3"] = laps["ST3"] == st3_max
-
 
 def _set_is_personal_best_sector(laps: DataFrame):
     pb_s1 = laps.groupby("Driver")["Sector1Time"].min()
@@ -90,9 +90,9 @@ def _filter_session(laps: Laps, queries: list[SessionQuery]) -> Laps:
 
 
 async def _resolve_lap_data(
-    session: Session, laps: Laps, queries: list[SessionQuery]
+    session: Session, current_driver_laps: Laps, queries: list[SessionQuery]
 ) -> LapSelectionData:
-    filtered_laps = _filter_session(laps, queries)
+    filtered_laps = _filter_session(current_driver_laps, queries)
     formatted_laps = filtered_laps[
         [
             "Driver",
@@ -108,6 +108,8 @@ async def _resolve_lap_data(
             "TyreLife",
             "Position",
             "Compound",
+            "PitInTime",
+            "PitOutTime",
         ]
     ]
     _rename_sector_columns(formatted_laps)
@@ -120,76 +122,78 @@ async def _resolve_lap_data(
     _set_purple_speedtraps(populated_laps)
 
     populated_laps.set_index(["Driver", "Team"], inplace=True)
-
-    lap_data = [
-        DriverLapData(
-            driver=index[0],
-            team=index[1],
-            color=get_driver_color(identifier=index[0], session=session),
-            stints=populated_laps.loc[index]
-            .groupby("Stint")
-            .agg(
-                avg_time=NamedAgg(column="LapTime", aggfunc="mean"),
-                min_time=NamedAgg(column="LapTime", aggfunc="min"),
-                max_time=NamedAgg(column="LapTime", aggfunc="max"),
-                low_quartile=NamedAgg(
-                    column="LapTime", aggfunc=lambda x: x.quantile(0.25)
-                ),
-                high_quartile=NamedAgg(
-                    column="LapTime", aggfunc=lambda x: x.quantile(0.75)
-                ),
-                median=NamedAgg(column="LapTime", aggfunc=lambda x: x.median()),
-                total_laps=NamedAgg(column="LapTime", aggfunc=lambda x: len(x)),
-            )
-            .to_dict(orient="records"),
-            session_data=StintData(
-                total_laps=len(populated_laps.loc[index]),
-                avg_time=(
-                    populated_laps.loc[index]["LapTime"]
-                    if isinstance(populated_laps.loc[index], Lap)
-                    else populated_laps.loc[index]["LapTime"].mean()
-                ),
-                min_time=(
-                    populated_laps.loc[index]["LapTime"]
-                    if isinstance(populated_laps.loc[index], Lap)
-                    else populated_laps.loc[index]["LapTime"].min()
-                ),
-                max_time=(
-                    populated_laps.loc[index]["LapTime"]
-                    if isinstance(populated_laps.loc[index], Lap)
-                    else populated_laps.loc[index]["LapTime"].max()
-                ),
-                low_quartile=(
-                    populated_laps.loc[index]["LapTime"]
-                    if isinstance(populated_laps.loc[index], Lap)
-                    else populated_laps.loc[index]["LapTime"].quantile(0.25)
-                ),
-                high_quartile=(
-                    populated_laps.loc[index]["LapTime"]
-                    if isinstance(populated_laps.loc[index], Lap)
-                    else populated_laps.loc[index]["LapTime"].quantile(0.75)
-                ),
-                median=(
-                    populated_laps.loc[index]["LapTime"]
-                    if isinstance(populated_laps.loc[index], Lap)
-                    else populated_laps.loc[index]["LapTime"].median()
-                ),
+    lap_data = []
+    for index in populated_laps.index.unique():
+        current_driver_laps = populated_laps.loc[index]
+        flying_laps = current_driver_laps[current_driver_laps["IsFlyingLap"] == True]
+        stint_groups = flying_laps.groupby("Stint")
+        filtered_stint_groups = stint_groups.agg(
+            avg_time=NamedAgg(column="LapTime", aggfunc="mean"),
+            min_time=NamedAgg(column="LapTime", aggfunc="min"),
+            max_time=NamedAgg(column="LapTime", aggfunc="max"),
+            low_quartile=NamedAgg(column="LapTime", aggfunc=lambda x: x.quantile(0.25)),
+            high_quartile=NamedAgg(
+                column="LapTime", aggfunc=lambda x: x.quantile(0.75)
             ),
-            laps=(
-                [populated_laps.loc[index].to_dict()]
-                if isinstance(populated_laps.loc[index], Series)
-                else populated_laps.loc[index].to_dict(orient="records")
-            ),
+            median=NamedAgg(column="LapTime", aggfunc=lambda x: x.median()),
+            total_laps=NamedAgg(column="LapTime", aggfunc="count"),
         )
-        for index in populated_laps.index.unique()
-    ]
+
+        lap_data.append(
+            DriverLapData(
+                driver=index[0],
+                team=index[1],
+                color=get_driver_color(identifier=index[0], session=session),
+                stints=filtered_stint_groups.to_dict(orient="records"),
+                session_data=StintData(
+                    total_laps=len(current_driver_laps),
+                    avg_time=(
+                        flying_laps["LapTime"]
+                        if isinstance(flying_laps, Lap)
+                        else flying_laps["LapTime"].mean()
+                    ),
+                    min_time=(
+                        current_driver_laps["LapTime"]
+                        if isinstance(current_driver_laps, Lap)
+                        else current_driver_laps["LapTime"].min()
+                    ),
+                    max_time=(
+                        current_driver_laps["LapTime"]
+                        if isinstance(current_driver_laps, Lap)
+                        else current_driver_laps["LapTime"].max()
+                    ),
+                    low_quartile=(
+                        current_driver_laps["LapTime"]
+                        if isinstance(current_driver_laps, Lap)
+                        else current_driver_laps["LapTime"].quantile(0.25)
+                    ),
+                    high_quartile=(
+                        current_driver_laps["LapTime"]
+                        if isinstance(current_driver_laps, Lap)
+                        else current_driver_laps["LapTime"].quantile(0.75)
+                    ),
+                    median=(
+                        flying_laps["LapTime"]
+                        if isinstance(flying_laps, Lap)
+                        else flying_laps["LapTime"].median()
+                    ),
+                ),
+                laps=(
+                    [current_driver_laps.to_dict()]
+                    if isinstance(current_driver_laps, Series)
+                    else current_driver_laps.to_dict(orient="records")
+                ),
+            )
+        )
+
     lap_data.sort(key=lambda x: x.session_data.min_time)
+    flying_laps = populated_laps[populated_laps["IsFlyingLap"] == True]
     return LapSelectionData(
         driver_lap_data=lap_data,
-        low_decile=formatted_laps["LapTime"].quantile(0.1),  # type: ignore
-        high_decile=formatted_laps["LapTime"].quantile(0.9),  # type: ignore
-        min_time=formatted_laps["LapTime"].min(),
-        max_time=formatted_laps["LapTime"].max(),
+        low_decile=flying_laps["LapTime"].quantile(0.1),  # type: ignore
+        high_decile=flying_laps["LapTime"].quantile(0.9),  # type: ignore
+        min_time=flying_laps["LapTime"].min(),
+        max_time=flying_laps["LapTime"].max(),
     )
 
 

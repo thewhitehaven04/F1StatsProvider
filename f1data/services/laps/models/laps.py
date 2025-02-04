@@ -1,5 +1,6 @@
 from enum import StrEnum
 from math import isnan, nan
+from typing import Sequence
 from pandas import Timedelta, notna 
 from pandas.api.typing import NaTType
 from pydantic import BaseModel, ConfigDict, field_serializer
@@ -100,8 +101,8 @@ class DriverLapData(BaseModel):
     team: str
     color: str
     session_data: StintData
-    stints: list[StintData]
-    laps: list[LapTimingData]
+    stints: Sequence[StintData]
+    laps: Sequence[LapTimingData]
 
 class LapSelectionData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
