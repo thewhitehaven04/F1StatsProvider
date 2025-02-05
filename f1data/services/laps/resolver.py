@@ -125,7 +125,7 @@ async def _resolve_lap_data(
     lap_data = []
     for index in populated_laps.index.unique():
         current_driver_laps = populated_laps.loc[index]
-        flying_laps = current_driver_laps[current_driver_laps["IsFlyingLap"] == True]
+        flying_laps = current_driver_laps[current_driver_laps["IsFlyingLap"]]
         stint_groups = flying_laps.groupby("Stint")
         filtered_stint_groups = stint_groups.agg(
             avg_time=NamedAgg(column="LapTime", aggfunc="mean"),
@@ -187,13 +187,13 @@ async def _resolve_lap_data(
         )
 
     lap_data.sort(key=lambda x: x.session_data.min_time)
-    flying_laps = populated_laps[populated_laps["IsFlyingLap"] == True]
+    flying_laps = populated_laps[populated_laps["IsFlyingLap"]]
     return LapSelectionData(
         driver_lap_data=lap_data,
         low_decile=flying_laps["LapTime"].quantile(0.1),  # type: ignore
         high_decile=flying_laps["LapTime"].quantile(0.9),  # type: ignore
-        min_time=flying_laps["LapTime"].min(),
-        max_time=flying_laps["LapTime"].max(),
+        min_time=populated_laps["LapTime"].min(),
+        max_time=populated_laps["LapTime"].max(),
     )
 
 
