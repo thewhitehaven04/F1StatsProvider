@@ -1,5 +1,5 @@
 from enum import StrEnum
-from math import isnan, nan
+from math import isnan
 from typing import Sequence
 from pandas import Timedelta, notna 
 from pandas.api.typing import NaTType

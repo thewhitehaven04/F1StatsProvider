@@ -11,7 +11,7 @@ EventRouter = APIRouter(prefix="/season", tags=["Event Schedule"])
 
 
 @EventRouter.get("/{year}", response_model=list[ScheduledEvent])
-async def year_events(
+def year_events(
     year: Annotated[int, Path(title="Year")],
     event_schedule_service: EventsService = Depends(EventsService),
 ):
@@ -21,7 +21,7 @@ async def year_events(
 @EventRouter.get(
     "/{year}/telemetry", response_model=list[ScheduledEvent]
 )
-async def year_telemetry_events(
+def year_telemetry_events(
     year: Annotated[int, Path(title="Year", gt=2018)],
     event_schedule_service: EventsService = Depends(EventsService),
 ):
@@ -32,13 +32,13 @@ async def year_telemetry_events(
     "/{year}/event/{event_name}/session/{session_identifier}/summary",
     response_model=SessionSummary,
 )
-async def get_session_summary(
+def get_session_summary(
     year: Annotated[int, Path(title="Year", gt=2018)],
     event_name: Annotated[str, Path(title="Event Name")],
     session_identifier: Annotated[SessionIdentifier, Path(title="Session Identifier")],
     session_summary_service: SessionSummaryService = Depends(SessionSummaryService),
 ): 
-    return await session_summary_service.get_session_summary(
+    return session_summary_service.get_session_summary(
         year=year,
         grand_prix=event_name,
         session_identifier=session_identifier,

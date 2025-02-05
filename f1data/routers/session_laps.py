@@ -20,7 +20,7 @@ SessionRouter = APIRouter(tags=["Session level data"])
     "/season/{year}/event/{event}/session/{session_identifier}/laps",
     response_model=LapSelectionData,
 )
-async def get_session_laptimes(
+def get_session_laptimes(
     loader: Annotated[SessionLoader, Depends()],
     body: SessionQueryFilter,
     response: Response
@@ -29,36 +29,36 @@ async def get_session_laptimes(
     Retrieve laptime data for given session
     """
     response.headers['Cache-Control'] = 'public, max-age=604800'
-    return await get_resolved_laptime_data(loader, body.queries)
+    return get_resolved_laptime_data(loader, body.queries)
 
 
 @SessionRouter.post(
     "/season/{year}/event/{event}/session/{session_identifier}/telemetry/comparison",
     response_model=TelemetryComparison,
 )
-async def get_session_telemetry(
+def get_session_telemetry(
     loader: Annotated[SessionLoader, Depends()],
     body: list[TelemetryRequest],
 ):
-    return await get_interpolated_telemetry_comparison(loader, body)
+    return get_interpolated_telemetry_comparison(loader, body)
 
 
 @SessionRouter.get(
     "/season/{year}/event/{event}/session/{session_identifier}/lap/{lap}/driver/{driver}/telemetry",
     response_model=DriverTelemetryData,
 )
-async def get_session_lap_driver_telemetry(
+def get_session_lap_driver_telemetry(
     loader: Annotated[SessionLoader, Depends()],
     lap: str,
     driver: str,
     response: Response
 ):
     response.headers['Cache-Control'] = 'public, max-age=604800'
-    return await get_telemetry(loader, driver, lap)
+    return get_telemetry(loader, driver, lap)
 
 @SessionRouter.post("/season/{year}/event/{event}/session/{session_identifier}/telemeries", response_model=list[DriverTelemetryData])
-async def get_session_lap_telemetries(
+def get_session_lap_telemetries(
     loader: Annotated[SessionLoader, Depends()],
     body: list[TelemetryRequest],
 ):
-    return await get_telemetries(loader, body) 
+    return get_telemetries(loader, body) 

@@ -86,31 +86,30 @@ def _resolve_qualifying_data(data: SessionResults):
     )
 
 
-async def get_results(
+def get_results(
     year: str, session_identifier: SessionIdentifier, grand_prix: str
 ):
     loader = SessionLoader(year, grand_prix, session_identifier)
-
     if session_identifier in [
         SessionIdentifier.FP1,
         SessionIdentifier.FP2,
         SessionIdentifier.FP3,
     ]:
-        return _resolve_practice_data(await loader.results, await loader.laps)
+        return _resolve_practice_data(loader.results, loader.laps)
 
     if int(year) >= 2024:
         if (
             session_identifier == SessionIdentifier.QUALIFYING
             or session_identifier == SessionIdentifier.SPRINT_QUALIFYING
         ):
-            return _resolve_qualifying_data(await loader.results)
+            return _resolve_qualifying_data(loader.results)
 
-        return _resolve_racelike_data(await loader.results)
+        return _resolve_racelike_data(loader.results)
 
     else:
         if (
             session_identifier == SessionIdentifier.QUALIFYING
             or session_identifier == SessionIdentifier.SHOOTOUT
         ):
-            return _resolve_qualifying_data(await loader.results)
-        return _resolve_racelike_data(await loader.results)
+            return _resolve_qualifying_data(loader.results)
+        return _resolve_racelike_data(loader.results)

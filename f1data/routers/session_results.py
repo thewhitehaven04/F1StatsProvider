@@ -14,10 +14,10 @@ SessionResults = APIRouter(prefix="/session/results", tags=["SessionData"])
 
 
 @SessionResults.get("/practice", response_model=list[PracticeResult])
-async def get_practice_results(
+def get_practice_results(
     params: Annotated[PracticeQueryRequest, Depends()],
 ):
-    return await get_results(
+    return get_results(
         year=params.year,
         session_identifier=params.practice,
         grand_prix=params.event_name,
@@ -25,10 +25,10 @@ async def get_practice_results(
 
 
 @SessionResults.get("/racelike", response_model=list[RaceResult])
-async def get_racelike_results(
+def get_racelike_results(
     params: Annotated[RaceQueryRequest, Depends()],
 ):
-    return await get_results(
+    return get_results(
         year=params.year,
         session_identifier=params.type,
         grand_prix=params.event_name,
@@ -36,10 +36,10 @@ async def get_racelike_results(
 
 
 @SessionResults.get("/qualilike", response_model=list[QualifyingResult])
-async def get_qualifying_results(
+def get_qualifying_results(
     params: Annotated[QualiQueryRequest, Depends()],
 ):
-    return await get_results(
+    return get_results(
         year=params.year,
         session_identifier=params.type,
         grand_prix=params.event_name,

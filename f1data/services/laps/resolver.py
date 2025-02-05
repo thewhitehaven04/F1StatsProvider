@@ -45,6 +45,7 @@ def _set_purple_speedtraps(laps: DataFrame):
     laps["IsBestST2"] = laps["ST2"] == st2_max
     laps["IsBestST3"] = laps["ST3"] == st3_max
 
+
 def _set_is_personal_best_sector(laps: DataFrame):
     pb_s1 = laps.groupby("Driver")["Sector1Time"].min()
     pb_s2 = laps.groupby("Driver")["Sector2Time"].min()
@@ -89,7 +90,7 @@ def _filter_session(laps: Laps, queries: list[SessionQuery]) -> Laps:
     )  # type: ignore
 
 
-async def _resolve_lap_data(
+def _resolve_lap_data(
     session: Session, current_driver_laps: Laps, queries: list[SessionQuery]
 ) -> LapSelectionData:
     filtered_laps = _filter_session(current_driver_laps, queries)
@@ -124,7 +125,7 @@ async def _resolve_lap_data(
     populated_laps.set_index(["Driver", "Team"], inplace=True)
     lap_data = []
     for index in populated_laps.index.unique():
-        current_driver_laps = populated_laps.loc[index]
+        current_driver_laps = populated_laps.loc[[index]]
         flying_laps = current_driver_laps[current_driver_laps["IsFlyingLap"]]
         stint_groups = flying_laps.groupby("Stint")
         filtered_stint_groups = stint_groups.agg(
@@ -147,42 +148,14 @@ async def _resolve_lap_data(
                 stints=filtered_stint_groups.to_dict(orient="records"),
                 session_data=StintData(
                     total_laps=len(current_driver_laps),
-                    avg_time=(
-                        flying_laps["LapTime"]
-                        if isinstance(flying_laps, Lap)
-                        else flying_laps["LapTime"].mean()
-                    ),
-                    min_time=(
-                        current_driver_laps["LapTime"]
-                        if isinstance(current_driver_laps, Lap)
-                        else current_driver_laps["LapTime"].min()
-                    ),
-                    max_time=(
-                        current_driver_laps["LapTime"]
-                        if isinstance(current_driver_laps, Lap)
-                        else current_driver_laps["LapTime"].max()
-                    ),
-                    low_quartile=(
-                        current_driver_laps["LapTime"]
-                        if isinstance(current_driver_laps, Lap)
-                        else current_driver_laps["LapTime"].quantile(0.25)
-                    ),
-                    high_quartile=(
-                        current_driver_laps["LapTime"]
-                        if isinstance(current_driver_laps, Lap)
-                        else current_driver_laps["LapTime"].quantile(0.75)
-                    ),
-                    median=(
-                        flying_laps["LapTime"]
-                        if isinstance(flying_laps, Lap)
-                        else flying_laps["LapTime"].median()
-                    ),
+                    avg_time=(flying_laps["LapTime"].mean()),
+                    min_time=(current_driver_laps["LapTime"].min()),
+                    max_time=(current_driver_laps["LapTime"].max()),
+                    low_quartile=(current_driver_laps["LapTime"].quantile(0.25)),
+                    high_quartile=(current_driver_laps["LapTime"].quantile(0.75)),
+                    median=(flying_laps["LapTime"].median()),
                 ),
-                laps=(
-                    [current_driver_laps.to_dict()]
-                    if isinstance(current_driver_laps, Series)
-                    else current_driver_laps.to_dict(orient="records")
-                ),
+                laps=(current_driver_laps.to_dict(orient="records")),
             )
         )
 
@@ -197,7 +170,7 @@ async def _resolve_lap_data(
     )
 
 
-async def get_resolved_laptime_data(
+def get_resolved_laptime_data(
     loader: SessionLoader, queries: list[SessionQuery]
 ) -> LapSelectionData:
-    return await _resolve_lap_data(loader.session, await loader.laps, queries)
+    return _resolve_lap_data(loader.session, loader.laps, queries)

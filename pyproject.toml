@@ -15,6 +15,7 @@ fastapi = {extras = ["hypercorn"], version = "^0.115.7"}
 pydantic = "2.9.2"
 apscheduler = "3.11.0"
 hypercorn = "^0.17.3"
+pycountry = "^24.6.1"
 
 
 [build-system]

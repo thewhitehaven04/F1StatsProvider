@@ -1,27 +1,15 @@
-import fastf1
-
 from core.models.queries import SessionIdentifier
-from fastf1.core import Session, DataNotLoadedError
+from fastf1.core import Session
 
+from services.session.session import SessionLoader
 from services.session_summary.models.summary import SessionSummary, Summary
 from services.session_summary.models.weather import SessionWeather
-from utils.retry import Retry
 
 
 class SessionSummaryService:
 
-    def _get_session(
-        self, year: int, session_identifier: SessionIdentifier, grand_prix: str
-    ):
-        session = fastf1.get_session(
-            year=year, identifier=session_identifier, gp=grand_prix
-        )
-        session.load(laps=False, telemetry=False, weather=True, messages=False)
-        return session
-
     @staticmethod
-    def _resolve_weather_data(session: Session):
-        weather = session.weather_data
+    def _resolve_weather_data(weather):
         return SessionWeather(
             air_temp_start=weather["AirTemp"].iloc[0],
             air_temp_finish=weather["AirTemp"].iloc[-1],
@@ -41,17 +29,13 @@ class SessionSummaryService:
             official_name=session.session_info["Meeting"]["OfficialName"],
         )
 
-    async def get_session_summary(
+    def get_session_summary(
         self, year: int, session_identifier: SessionIdentifier, grand_prix: str
     ):
-        retry = Retry(
-            polling_interval_seconds=0.3,
-            timeout_seconds=30,
-            ignored_exceptions=(DataNotLoadedError, KeyError),
-        )
-        session = self._get_session(year, session_identifier, grand_prix)
+        loader = SessionLoader(str(year), grand_prix, session_identifier)
+        loader.laps
 
-        weather = await retry(self._resolve_weather_data, session)
-        summary = await retry(self._resolve_summary_data, session)
+        summary = self._resolve_summary_data(loader.session)
+        weather = self._resolve_weather_data(loader.weather)
 
         return SessionSummary(weather=weather, summary=summary)
