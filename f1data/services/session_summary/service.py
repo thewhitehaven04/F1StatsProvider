@@ -33,9 +33,9 @@ class SessionSummaryService:
         self, year: int, session_identifier: SessionIdentifier, grand_prix: str
     ):
         loader = SessionLoader(str(year), grand_prix, session_identifier)
-        loader.laps
+        weather = loader.weather
 
+        weather = self._resolve_weather_data(weather)
         summary = self._resolve_summary_data(loader.session)
-        weather = self._resolve_weather_data(loader.weather)
 
         return SessionSummary(weather=weather, summary=summary)

@@ -63,7 +63,6 @@ def get_interpolated_telemetry_comparison(
                 "comparison": driver_telemetry.to_dict(orient="list"),
             }
         )
-
     return {
         "telemetries": telemetries,
         "reference": reference_lap["Driver"].iloc[0],
@@ -90,9 +89,7 @@ def get_telemetry(session_loader: SessionLoader, driver: str, lap: str):
     }
 
 
-def get_telemetries(
-    session_loader: SessionLoader, queries: list[TelemetryRequest]
-):
+def get_telemetries(session_loader: SessionLoader, queries: list[TelemetryRequest]):
     telemetries = []
     for query in queries:
         for lap in query.lap_filter:
