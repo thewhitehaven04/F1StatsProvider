@@ -61,8 +61,8 @@ class LapTimingData(BaseModel):
     @field_serializer(
         "Stint", "TyreLife", mode="plain", when_used="json", return_type=int | None
     )
-    def serialize_to_int(self, val: int):
-        return None if isnan(val) else val
+    def serialize_to_int(self, val: float):
+        return None if isnan(val) else int(val)
 
     @field_serializer('Compound', mode='plain', when_used='json', return_type=ECompound | None)
     def serialize_to_compound(self, val: str):
