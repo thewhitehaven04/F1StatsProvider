@@ -1,10 +1,10 @@
-from pandas import DataFrame, NamedAgg, Series, isna, concat
-from fastf1.core import Laps, Session, Lap
+from pandas import DataFrame, NamedAgg, isna, concat
+from fastf1.core import Laps, Session 
 from fastf1.plotting import get_driver_color
 
-from core.models.queries import SessionQuery
+from core.models.queries import SessionIdentifier, SessionQuery
 from services.laps.models.laps import DriverLapData, LapSelectionData, StintData
-from services.session.session import SessionLoader
+from services.session.session import get_loader
 
 
 def _populate_with_data(laps: DataFrame):
@@ -171,6 +171,10 @@ def _resolve_lap_data(
 
 
 def get_resolved_laptime_data(
-    loader: SessionLoader, queries: list[SessionQuery]
+    year: str,
+    event: str,
+    session_identifier: SessionIdentifier,
+    queries: list[SessionQuery]
 ) -> LapSelectionData:
+    loader = get_loader(year, event, session_identifier)
     return _resolve_lap_data(loader.session, loader.laps, queries)

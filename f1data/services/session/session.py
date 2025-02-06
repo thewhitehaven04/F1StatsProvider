@@ -1,9 +1,9 @@
-import asyncio
+from functools import cached_property
 import fastf1
-from fastf1.core import DataNotLoadedError, Laps, Telemetry, SessionResults
+from fastf1.core import Laps, Telemetry, SessionResults
+from pyparsing import lru_cache
 
 from core.models.queries import SessionIdentifier
-
 
 class SessionLoader:
 
@@ -14,50 +14,34 @@ class SessionLoader:
             year=int(year), identifier=session_identifier, gp=event
         )
 
-    @property
+    @cached_property
     def laps(self) -> Laps:
-        try:
-            return self.session.laps
-        except DataNotLoadedError:
-            self.session.load(laps=True, telemetry=False, weather=False, messages=False)
-        finally:
-            return self.session.laps
+        self.session.load(laps=True, telemetry=False, weather=False, messages=False)
+        return self.session.laps
 
-    @property
+    @cached_property
     def results(self) -> SessionResults:
-        try:
-            return self.session.results
-        except DataNotLoadedError:
-            self.session.load(laps=True, telemetry=False, weather=False, messages=True)
-        finally:
-            return self.session.results
+        self.session.load(laps=True, telemetry=False, weather=False, messages=True)
+        return self.session.results
 
-    @property
+    @cached_property
     def car_data(self) -> Telemetry:
-        try:
-            return self.session.car_data
-        except DataNotLoadedError:
-            self.session.load(laps=False, telemetry=True, weather=False, messages=False)
-        finally:
-            return self.session.car_data
+        self.session.load(laps=False, telemetry=True, weather=False, messages=False)
+        return self.session.car_data
 
-    @property
+    @cached_property
     def lap_telemetry(self) -> Laps:
-        try:
-            return self.session.laps
-        except DataNotLoadedError:
-            self.session.load(laps=True, telemetry=True, weather=False, messages=False)
-        finally:
-            return self.session.laps
+        self.session.load(laps=True, telemetry=True, weather=False, messages=False)
+        return self.session.laps
 
-    @property
+    @cached_property
     def weather(self):
-        try:
-            return self.session.weather_data
-        except DataNotLoadedError:
-            self.session.load(laps=True, telemetry=False, weather=True, messages=False)
-        finally:
-            return self.session.weather_data
+        self.session.load(laps=True, telemetry=False, weather=True, messages=False)
+        return self.session.weather_data
 
     def load_all(self):
         self.session.load(laps=True, telemetry=True, weather=False, messages=True)
+
+@lru_cache(maxsize=64)
+def get_loader(year: str, event: str, session_identifier: SessionIdentifier) -> SessionLoader:
+    return SessionLoader(year, event, session_identifier)

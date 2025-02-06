@@ -2,7 +2,7 @@ import pandas as pd
 from fastf1.core import SessionResults, Laps
 
 from f1data.core.models.queries import SessionIdentifier
-from services.session.session import SessionLoader
+from services.session.session import get_loader
 
 
 def _resolve_racelike_data(data: SessionResults):
@@ -89,7 +89,7 @@ def _resolve_qualifying_data(data: SessionResults):
 def get_results(
     year: str, session_identifier: SessionIdentifier, grand_prix: str
 ):
-    loader = SessionLoader(year, grand_prix, session_identifier)
+    loader = get_loader(year, grand_prix, session_identifier)
     if session_identifier in [
         SessionIdentifier.FP1,
         SessionIdentifier.FP2,

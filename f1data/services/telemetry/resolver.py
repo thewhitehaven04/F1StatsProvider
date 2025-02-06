@@ -1,6 +1,6 @@
 from typing import Sequence
-from core.models.queries import TelemetryRequest
-from services.session.session import SessionLoader
+from core.models.queries import SessionIdentifier, TelemetryRequest
+from services.session.session import get_loader
 from pandas import concat
 from fastf1.plotting import get_driver_color
 from fastf1.core import Telemetry, Laps
@@ -14,10 +14,13 @@ def _pick_laps_telemetry(
 
 
 def get_interpolated_telemetry_comparison(
-    session_loader: SessionLoader,
+    year: str,
+    event: str,
+    session_identifier: SessionIdentifier,
     comparison: list[TelemetryRequest],
 ):
-    laps = session_loader.lap_telemetry
+    loader = get_loader(year, event, session_identifier)
+    laps = loader.lap_telemetry
     telemetries = []
     concat_laps = concat(
         [laps.pick_drivers(req.driver).pick_laps(req.lap_filter) for req in comparison]
@@ -59,7 +62,7 @@ def get_interpolated_telemetry_comparison(
         telemetries.append(
             {
                 "driver": driver,
-                "color": get_driver_color(driver, session_loader.session),
+                "color": get_driver_color(driver, loader.session),
                 "comparison": driver_telemetry.to_dict(orient="list"),
             }
         )
@@ -69,9 +72,13 @@ def get_interpolated_telemetry_comparison(
     }
 
 
-def get_telemetry(session_loader: SessionLoader, driver: str, lap: str):
-    session = session_loader.session
-    telemetry = _pick_laps_telemetry(session_loader.lap_telemetry, lap, driver)[
+def get_telemetry(
+    year: str, event: str, session_identifier: SessionIdentifier, driver: str, lap: str
+):
+    loader = get_loader(year, event, session_identifier)
+    session = loader.session
+    telemetry = loader.lap_telemetry
+    telemetry = _pick_laps_telemetry(telemetry, lap, driver)[
         [
             "Throttle",
             "nGear",
@@ -89,10 +96,17 @@ def get_telemetry(session_loader: SessionLoader, driver: str, lap: str):
     }
 
 
-def get_telemetries(session_loader: SessionLoader, queries: list[TelemetryRequest]):
+def get_telemetries(
+    year: str,
+    event: str,
+    session_identifier: SessionIdentifier,
+    queries: list[TelemetryRequest],
+):
     telemetries = []
     for query in queries:
         for lap in query.lap_filter:
-            telemetries.append(get_telemetry(session_loader, query.driver, str(lap)))
+            telemetries.append(
+                get_telemetry(year, event, session_identifier, query.driver, str(lap))
+            )
 
     return telemetries
