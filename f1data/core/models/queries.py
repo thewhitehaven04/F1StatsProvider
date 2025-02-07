@@ -34,11 +34,11 @@ class QualiQueryRequest(BaseModel):
 class PracticeQueryRequest(BaseModel):
     year: str
     event_name: str
-    practice: Literal[
-        SessionIdentifier.FP1,
-        SessionIdentifier.FP2,
-        SessionIdentifier.FP3,
-    ]
+    type: (
+        Literal[SessionIdentifier.FP1]
+        | Literal[SessionIdentifier.FP2]
+        | Literal[SessionIdentifier.FP3]
+    )
 
 
 class SessionQuery(BaseModel):

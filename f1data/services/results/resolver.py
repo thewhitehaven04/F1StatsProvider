@@ -52,9 +52,9 @@ def _resolve_practice_data(data: SessionResults, laps: Laps):
                 "FullName": "Driver",
             }
         )
-        .assign(Time=laps.groupby("DriverNumber").agg({"LapTime": "min"}))
-        .sort_values(by=["Time"], ascending=True)
-        .assign(Gap=lambda x: x["Time"].sub(x["Time"].iloc[0]))
+        .assign(Time_=laps.groupby("DriverNumber").agg({"LapTime": "min"}))
+        .sort_values(by=["Time_"], ascending=True)
+        .assign(Gap=lambda x: x["Time_"].sub(x["Time_"].iloc[0]))
         .to_dict(orient="records")
     )
 

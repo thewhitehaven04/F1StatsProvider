@@ -9,8 +9,6 @@ from core.models.queries import (
 from services.results.models.results import PracticeResult, QualifyingResult, RaceResult
 from services.results.resolver import get_results
 
-
-
 SessionResults = APIRouter(prefix="/session/results", tags=["SessionData"])
 
 
@@ -20,7 +18,7 @@ def get_practice_results(
 ):
     return get_results(
         year=params.year,
-        session_identifier=params.practice,
+        session_identifier=params.type,
         grand_prix=params.event_name,
     )
 

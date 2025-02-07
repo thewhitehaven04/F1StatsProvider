@@ -14,11 +14,11 @@ class SessionBaseResult(BaseModel):
 class PracticeResult(SessionBaseResult):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    Time: Timedelta | NaTType 
+    Time_: Timedelta | NaTType 
     Gap: Timedelta | NaTType
     
     @field_serializer(
-        "Time", "Gap", mode="plain", when_used="json", return_type=float | None
+        "Time_", "Gap", mode="plain", when_used="json", return_type=float | None
     )
     def serialize_timedelta(self, val):
         return val.total_seconds() if notna(val) else None
@@ -37,7 +37,7 @@ class RaceResult(SessionBaseResult):
     @field_serializer(
         "Time", "Gap", mode="plain", when_used="json", return_type=float | None
     )
-    def serialize_timedelta(self, val):
+    def serialize_timedelta(self, val: Timedelta | NaTType):
         return val.total_seconds() if notna(val) else None
 
 
