@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+import os
+from fastapi import FastAPI, logger
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers.session_laps import SessionRouter
@@ -11,7 +12,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_methods=["GET", "POST"],
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
 )
 app.include_router(SessionRouter)
