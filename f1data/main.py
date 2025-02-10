@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, logger
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers.session_laps import SessionRouter

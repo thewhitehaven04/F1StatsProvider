@@ -1,4 +1,5 @@
-from typing import Sequence 
+from typing import Sequence
+from xmlrpc.client import Boolean 
 from pandas import Timedelta, notna
 from pydantic import BaseModel, ConfigDict, field_serializer
 
@@ -6,6 +7,7 @@ class TelemetryData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     Throttle: Sequence[int]
+    Brake: Sequence[Boolean]
     Gear: Sequence[int]
     Speed: Sequence[int]
     RPM: Sequence[int]

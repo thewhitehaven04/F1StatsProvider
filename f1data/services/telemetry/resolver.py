@@ -76,11 +76,10 @@ def get_telemetry(
     year: str, event: str, session_identifier: SessionIdentifier, driver: str, lap: str
 ):
     loader = get_loader(year, event, session_identifier)
-    session = loader.session
-    telemetry = loader.lap_telemetry
-    telemetry = _pick_laps_telemetry(telemetry, lap, driver)[
+    telemetry = _pick_laps_telemetry(loader.lap_telemetry, lap, driver)[
         [
             "Throttle",
+            "Brake",
             "nGear",
             "Speed",
             "RPM",
@@ -91,7 +90,7 @@ def get_telemetry(
     ]
     return {
         "driver": driver,
-        "color": get_driver_color(driver, session),
+        "color": get_driver_color(driver, loader.session),
         "telemetry": telemetry.rename(columns={"nGear": "Gear"}).to_dict(orient="list"),
     }
 

@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Path, Response
+from fastapi import APIRouter, Path 
 from core.models.queries import SessionIdentifier
 from services.event_schedule.models import ScheduledEvent
 from services.event_schedule.event import get_schedule
