@@ -1,6 +1,6 @@
 from functools import cached_property
 import fastf1
-from fastf1.core import Laps, Telemetry, SessionResults
+from fastf1.core import Laps, Telemetry, SessionResults, DataNotLoadedError
 from pyparsing import lru_cache
 
 from core.models.queries import SessionIdentifier
@@ -38,10 +38,18 @@ class SessionLoader:
     def weather(self):
         self.session.load(laps=True, telemetry=False, weather=True, messages=False)
         return self.session.weather_data
+    
+    @cached_property
+    def session_info(self):
+        self.session.load(laps=True, telemetry=False, weather=False, messages=False)
+        return self.session
 
     def load_all(self):
         self.session.load(laps=True, telemetry=True, weather=False, messages=True)
 
+
 @lru_cache(maxsize=64)
-def get_loader(year: str, event: str, session_identifier: SessionIdentifier) -> SessionLoader:
+def get_loader(
+    year: str, event: str, session_identifier: SessionIdentifier
+) -> SessionLoader:
     return SessionLoader(year, event, session_identifier)

@@ -29,9 +29,8 @@ def get_session_info(
     year: int, session_identifier: SessionIdentifier, grand_prix: str
 ):
     loader = SessionLoader(str(year), grand_prix, session_identifier)
-    weather = loader.weather
 
-    weather = _resolve_weather_data(weather)
-    summary = _resolve_summary_data(loader.session)
+    weather = _resolve_weather_data(loader.weather)
+    summary = _resolve_summary_data(loader.session_info)
 
     return SessionSummary(weather=weather, summary=summary)
