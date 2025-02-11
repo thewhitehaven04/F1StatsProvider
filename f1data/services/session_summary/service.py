@@ -27,9 +27,9 @@ def _resolve_summary_data(session_info):
 
 
 def get_session_info(
-    year: int, session_identifier: SessionIdentifier, grand_prix: str
+    year: int, session_identifier: SessionIdentifier, round: int 
 ):
-    loader = get_loader(year, grand_prix, session_identifier)
+    loader = get_loader(year, round, session_identifier)
 
     weather = _resolve_weather_data(loader.weather)
     summary = _resolve_summary_data(loader.session_info)

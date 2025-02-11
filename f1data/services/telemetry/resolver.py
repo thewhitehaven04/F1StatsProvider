@@ -15,11 +15,11 @@ def _pick_laps_telemetry(
 
 def get_interpolated_telemetry_comparison(
     year: str,
-    event: str,
+    round: int,
     session_identifier: SessionIdentifier,
     comparison: list[TelemetryRequest],
 ):
-    loader = get_loader(year, event, session_identifier)
+    loader = get_loader(year, round, session_identifier)
     laps = loader.lap_telemetry
     telemetries = []
     concat_laps = concat(
@@ -73,9 +73,9 @@ def get_interpolated_telemetry_comparison(
 
 
 def get_telemetry(
-    year: str, event: str, session_identifier: SessionIdentifier, driver: str, lap: str
+    year: str, round: int, session_identifier: SessionIdentifier, driver: str, lap: str
 ):
-    loader = get_loader(year, event, session_identifier)
+    loader = get_loader(year, round, session_identifier)
     telemetry = _pick_laps_telemetry(loader.lap_telemetry, lap, driver)[
         [
             "Throttle",
@@ -97,7 +97,7 @@ def get_telemetry(
 
 def get_telemetries(
     year: str,
-    event: str,
+    round: int,
     session_identifier: SessionIdentifier,
     queries: list[TelemetryRequest],
 ):
@@ -105,7 +105,7 @@ def get_telemetries(
     for query in queries:
         for lap in query.lap_filter:
             telemetries.append(
-                get_telemetry(year, event, session_identifier, query.driver, str(lap))
+                get_telemetry(year, round, session_identifier, query.driver, str(lap))
             )
 
     return telemetries

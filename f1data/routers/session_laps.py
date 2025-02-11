@@ -1,5 +1,4 @@
-from typing import Annotated
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Response
 
 
 from core.models.queries import SessionIdentifier, SessionQueryFilter, TelemetryRequest
@@ -16,12 +15,12 @@ SessionRouter = APIRouter(tags=["Session level data"])
 
 
 @SessionRouter.post(
-    "/season/{year}/event/{event}/session/{session_identifier}/laps",
+    "/season/{year}/round/{round}/session/{session_identifier}/laps",
     response_model=LapSelectionData,
 )
 def get_session_laptimes(
     year: str,
-    event: str,
+    round: str,
     session_identifier: SessionIdentifier,
     body: SessionQueryFilter,
     response: Response
@@ -30,42 +29,42 @@ def get_session_laptimes(
     Retrieve laptime data for given session
     """
     response.headers['Cache-Control'] = 'public, max-age=604800'
-    return get_resolved_laptime_data(year, event, session_identifier, body.queries)
+    return get_resolved_laptime_data(year, int(round), session_identifier, body.queries)
 
 
 @SessionRouter.post(
-    "/season/{year}/event/{event}/session/{session_identifier}/telemetry/comparison",
+    "/season/{year}/round/{round}/session/{session_identifier}/telemetry/comparison",
     response_model=TelemetryComparison,
 )
 def get_session_telemetry(
     year: str,
-    event: str,
+    round: str,
     session_identifier: SessionIdentifier,
     body: list[TelemetryRequest],
 ):
-    return get_interpolated_telemetry_comparison(year, event, session_identifier, body)
+    return get_interpolated_telemetry_comparison(year, int(round), session_identifier, body)
 
 
 @SessionRouter.get(
-    "/season/{year}/event/{event}/session/{session_identifier}/lap/{lap}/driver/{driver}/telemetry",
+    "/season/{year}/round/{round}/session/{session_identifier}/lap/{lap}/driver/{driver}/telemetry",
     response_model=DriverTelemetryData,
 )
 def get_session_lap_driver_telemetry(
     year: str,
-    event: str,
+    round: str,
     session_identifier: SessionIdentifier,
     lap: str,
     driver: str,
     response: Response
 ):
     response.headers['Cache-Control'] = 'public, max-age=604800'
-    return get_telemetry(year, event, session_identifier, driver, lap)
+    return get_telemetry(year, int(round), session_identifier, driver, lap)
 
-@SessionRouter.post("/season/{year}/event/{event}/session/{session_identifier}/telemeries", response_model=list[DriverTelemetryData])
+@SessionRouter.post("/season/{year}/round/{round}/session/{session_identifier}/telemeries", response_model=list[DriverTelemetryData])
 def get_session_lap_telemetries(
     year: str,
-    event: str,
+    round: str,
     session_identifier: SessionIdentifier,
     body: list[TelemetryRequest],
 ):
-    return get_telemetries(year, event, session_identifier, body) 
+    return get_telemetries(year, int(round), session_identifier, body) 

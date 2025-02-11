@@ -19,7 +19,7 @@ def get_practice_results(
     return get_results(
         year=params.year,
         session_identifier=params.type,
-        grand_prix=params.event_name,
+        round=int(params.round),
     )
 
 
@@ -30,7 +30,7 @@ def get_racelike_results(
     return get_results(
         year=params.year,
         session_identifier=params.type,
-        grand_prix=params.event_name,
+        round=int(params.round),
     )
 
 
@@ -41,5 +41,5 @@ def get_qualifying_results(
     return get_results(
         year=params.year,
         session_identifier=params.type,
-        grand_prix=params.event_name,
+        round=int(params.round),
     )

@@ -13,10 +13,10 @@ class SessionLoader:
     """The loader is used to minimize the amount of data loaded"""
 
     def __init__(
-        self, year: str, event: str, session_identifier: SessionIdentifier
+        self, year: str, round: int, session_identifier: SessionIdentifier
     ) -> None:
         self._session = fastf1.get_session(
-            year=int(year), identifier=session_identifier, gp=event
+            year=int(year), identifier=session_identifier, gp=round
         )
         self.retry = Retry(
             polling_interval_seconds=0.5,
@@ -130,6 +130,6 @@ class SessionLoader:
 
 @lru_cache(maxsize=32)
 def get_loader(
-    year: str, event: str, session_identifier: SessionIdentifier
+    year: str, round: int, session_identifier: SessionIdentifier
 ) -> SessionLoader:
-    return SessionLoader(year, event, session_identifier)
+    return SessionLoader(year, round, session_identifier)

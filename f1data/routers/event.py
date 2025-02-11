@@ -25,16 +25,16 @@ def year_telemetry_events(
 
 
 @EventRouter.get(
-    "/{year}/event/{event_name}/session/{session_identifier}/summary",
+    "/{year}/round/{round}/session/{session_identifier}/summary",
     response_model=SessionSummary,
 )
 def get_session_summary(
     year: Annotated[int, Path(title="Year", gt=2018)],
-    event_name: Annotated[str, Path(title="Event Name")],
+    round: Annotated[str, Path(title="Round number")],
     session_identifier: Annotated[SessionIdentifier, Path(title="Session Identifier")],
 ):
     return get_session_info(
         year=year,
-        grand_prix=event_name,
+        round=int(round),
         session_identifier=session_identifier,
     )

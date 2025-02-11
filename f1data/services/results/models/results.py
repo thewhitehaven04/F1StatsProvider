@@ -28,9 +28,9 @@ class PracticeResult(SessionBaseResult):
 class RaceResult(SessionBaseResult):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    GridPosition: int
+    GridPosition: int 
     Status: str
-    Points: int
+    Points: int 
     Time: Timedelta | NaTType 
     Gap: Timedelta | NaTType
 
@@ -39,7 +39,6 @@ class RaceResult(SessionBaseResult):
     )
     def serialize_timedelta(self, val: Timedelta | NaTType):
         return val.total_seconds() if notna(val) else None
-
 
 class QualifyingResult(SessionBaseResult):
     model_config = ConfigDict(arbitrary_types_allowed=True)

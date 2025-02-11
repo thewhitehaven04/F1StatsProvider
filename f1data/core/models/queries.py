@@ -17,19 +17,19 @@ class SessionIdentifier(StrEnum):
 
 class RaceQueryRequest(BaseModel):
     year: str
-    event_name: str
+    round: str 
     type: Literal[SessionIdentifier.SPRINT, SessionIdentifier.RACE]
 
 
 class QualiQueryRequest(BaseModel):
-    event_name: str
     year: str
+    round: str 
     type: Literal[SessionIdentifier.QUALIFYING, SessionIdentifier.SHOOTOUT, SessionIdentifier.SPRINT_QUALIFYING]
 
 
 class PracticeQueryRequest(BaseModel):
     year: str
-    event_name: str
+    round: str 
     type: Literal[SessionIdentifier.FP1, SessionIdentifier.FP2, SessionIdentifier.FP3]
 
 
