@@ -177,4 +177,4 @@ def get_resolved_laptime_data(
     queries: list[SessionQuery]
 ) -> LapSelectionData:
     loader = get_loader(year, event, session_identifier)
-    return _resolve_lap_data(loader.session, loader.laps, queries)
+    return _resolve_lap_data(loader._session, loader.laps, queries)

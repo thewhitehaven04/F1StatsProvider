@@ -1,7 +1,6 @@
 import logging
 import time
 from typing import Callable, TypeVar
-from asyncio import sleep
 
 
 T = TypeVar("T")
@@ -18,7 +17,7 @@ class Retry:
         self._timeout = timeout_seconds
         self._ignored_exceptions = ignored_exceptions
 
-    async def __call__(self, cb: Callable[..., T], *args, **kwargs) -> T:
+    def __call__(self, cb: Callable[..., T], *args, **kwargs) -> T:
         t_start = time.time()
         while time.time() - t_start < self._timeout:
             try:
@@ -28,6 +27,6 @@ class Retry:
                 logging.warning(
                     f"Ignoring exception {e}, waiting for {self._polling_interval_seconds} ms"
                 )
-                await sleep(self._polling_interval_seconds)
+                time.sleep(self._polling_interval_seconds)
 
         raise RuntimeError("Max attempts exceeded")

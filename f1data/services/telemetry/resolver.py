@@ -62,7 +62,7 @@ def get_interpolated_telemetry_comparison(
         telemetries.append(
             {
                 "driver": driver,
-                "color": get_driver_color(driver, loader.session),
+                "color": get_driver_color(driver, loader._session),
                 "comparison": driver_telemetry.to_dict(orient="list"),
             }
         )
@@ -90,7 +90,7 @@ def get_telemetry(
     ]
     return {
         "driver": driver,
-        "color": get_driver_color(driver, loader.session),
+        "color": get_driver_color(driver, loader._session),
         "telemetry": telemetry.rename(columns={"nGear": "Gear"}).to_dict(orient="list"),
     }
 
