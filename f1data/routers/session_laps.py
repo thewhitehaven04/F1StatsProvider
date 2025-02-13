@@ -4,12 +4,14 @@ from fastapi import APIRouter, Response
 from core.models.queries import SessionIdentifier, SessionQueryFilter, TelemetryRequest
 from services.laps.models.laps import LapSelectionData
 from services.laps.resolver import get_resolved_laptime_data
+from services.tasks.preload_telemetry import preload_telemetry
 from services.telemetry.models.Telemetry import DriverTelemetryData, TelemetryComparison
 from services.telemetry.resolver import (
     get_interpolated_telemetry_comparison,
     get_telemetries,
     get_telemetry,
 )
+from fastapi import BackgroundTasks
 
 SessionRouter = APIRouter(tags=["Session level data"])
 
@@ -23,11 +25,13 @@ def get_session_laptimes(
     round: str,
     session_identifier: SessionIdentifier,
     body: SessionQueryFilter,
-    response: Response
+    response: Response,
+    background_tasks: BackgroundTasks
 ):
     """
     Retrieve laptime data for given session
     """
+    background_tasks.add_task(preload_telemetry, year, round, session_identifier)  
     response.headers['Cache-Control'] = 'public, max-age=604800'
     return get_resolved_laptime_data(year, int(round), session_identifier, body.queries)
 

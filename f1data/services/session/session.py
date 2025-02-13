@@ -60,26 +60,24 @@ class SessionLoader:
             return self._session.results
         return self.retry(fetch_results)
 
+    def fetch_lap_telemetry(self) -> Laps:
+        if self._has_loaded_laps:
+            self._session.load(
+                laps=False, telemetry=True, weather=False, messages=False
+            )
+        else:
+            self._session.load(laps=True, telemetry=True, weather=False, messages=False)
+        if self._session.laps is not None:
+            self._has_loaded_telemetry = True
+            return self._session.laps
+        raise DataNotLoadedError
+
     @cached_property
     def lap_telemetry(self) -> Laps:
-        def fetch_lap_telemetry() -> Laps:
-            if self._has_loaded_laps:
-                self._session.load(
-                    laps=False, telemetry=True, weather=False, messages=False
-                )
-            else:
-                self._session.load(
-                    laps=True, telemetry=True, weather=False, messages=False
-                )
-            if self._session.laps is not None:
-                self._has_loaded_telemetry = True
-                return self._session.laps
-            raise DataNotLoadedError
-
         if self._has_loaded_telemetry:
             return self._session.laps
 
-        return self.retry(fetch_lap_telemetry)
+        return self.retry(self.fetch_lap_telemetry)
 
     @property
     def session_info(self) -> dict:
