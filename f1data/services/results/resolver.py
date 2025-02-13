@@ -31,7 +31,8 @@ def _resolve_racelike_data(data: SessionResults):
             )
         )
     )
-    racelike_data["Gap"].iloc[0] = pd.Timedelta(0)
+
+    racelike_data.iloc[0, 5] = pd.Timedelta(0)
 
     return racelike_data.to_dict(orient="records")
 
@@ -86,9 +87,7 @@ def _resolve_qualifying_data(data: SessionResults):
     )
 
 
-def get_results(
-    year: str, session_identifier: SessionIdentifier, round: int 
-):
+def get_results(year: str, session_identifier: SessionIdentifier, round: int):
     loader = get_loader(year, round, session_identifier)
     if session_identifier in [
         SessionIdentifier.FP1,
