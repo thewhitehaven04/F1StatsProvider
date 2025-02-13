@@ -30,7 +30,7 @@ class SessionLoader:
         self._has_loaded_messages = False
         self._has_loaded_weather = False
 
-    @cached_property
+    @property
     def laps(self) -> Laps:
         def fetch_laps() -> Laps:
             self._session.load(
@@ -114,7 +114,7 @@ class SessionLoader:
             return self._session.weather_data
         return self.retry(fetch_weather_data)
 
-    @cached_property
+    @property
     def session(self):
         self._session.load(
             laps=False if self._has_loaded_laps else True,

@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Path 
+from fastapi import APIRouter, Path, Response 
 from core.models.queries import SessionIdentifier
 from services.event_schedule.models import ScheduledEvent
 from services.event_schedule.event import get_schedule
@@ -32,7 +32,9 @@ def get_session_summary(
     year: Annotated[int, Path(title="Year", gt=2018)],
     round: Annotated[str, Path(title="Round number")],
     session_identifier: Annotated[SessionIdentifier, Path(title="Session Identifier")],
+    response: Response,
 ):
+    response.headers["Cache-Control"] = "max-age=4322600, public"
     return get_session_info(
         year=year,
         round=int(round),
