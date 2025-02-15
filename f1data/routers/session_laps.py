@@ -40,20 +40,20 @@ def get_session_laptimes(
     "/season/{year}/round/{round_number}/session/{session_identifier}/telemetry/comparison",
     response_model=TelemetryComparison,
 )
-def get_session_telemetry(
+async def get_session_telemetry(
     year: str,
     round_number: str,
     session_identifier: SessionIdentifier,
     body: list[TelemetryRequest],
 ):
-    return get_interpolated_telemetry_comparison(year, int(round_number), session_identifier, body)
+    return await get_interpolated_telemetry_comparison(year, int(round_number), session_identifier, body)
 
 
 @SessionRouter.get(
     "/season/{year}/round/{round_number}/session/{session_identifier}/lap/{lap}/driver/{driver}/telemetry",
     response_model=DriverTelemetryData,
 )
-def get_session_lap_driver_telemetry(
+async def get_session_lap_driver_telemetry(
     year: str,
     round_number: str,
     session_identifier: SessionIdentifier,
@@ -62,13 +62,13 @@ def get_session_lap_driver_telemetry(
     response: Response
 ):
     response.headers['Cache-Control'] = 'public, max-age=604800'
-    return get_telemetry(year, int(round_number), session_identifier, driver, lap)
+    return await get_telemetry(year, int(round_number), session_identifier, driver, lap)
 
 @SessionRouter.post("/season/{year}/round/{round_number}/session/{session_identifier}/telemetries", response_model=list[DriverTelemetryData])
-def get_session_lap_telemetries(
+async def get_session_lap_telemetries(
     year: str,
     round_number: str,
     session_identifier: SessionIdentifier,
     body: list[TelemetryRequest],
 ):
-    return get_telemetries(year, int(round_number), session_identifier, body) 
+    return await get_telemetries(year, int(round_number), session_identifier, body) 

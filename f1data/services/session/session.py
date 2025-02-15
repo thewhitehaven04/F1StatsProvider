@@ -1,9 +1,10 @@
-from functools import cached_property
+from fastapi import logger
 import fastf1
 from fastf1.core import Laps, SessionResults
 from pandas import DataFrame
 from pyparsing import lru_cache
 from fastf1.core import DataNotLoadedError
+from anyio import Lock
 
 from core.models.queries import SessionIdentifier
 from utils.retry import Retry
@@ -29,6 +30,8 @@ class SessionLoader:
         self._has_loaded_telemetry = False
         self._has_loaded_messages = False
         self._has_loaded_weather = False
+
+        self.lock = Lock()
 
     @property
     def laps(self) -> Laps:
@@ -60,24 +63,27 @@ class SessionLoader:
             return self._session.results
         return self.retry(fetch_results)
 
-    def fetch_lap_telemetry(self) -> Laps:
-        if self._has_loaded_laps:
-            self._session.load(
-                laps=False, telemetry=True, weather=False, messages=False
-            )
-        else:
-            self._session.load(laps=True, telemetry=True, weather=False, messages=False)
-        if self._session.laps is not None:
-            self._has_loaded_telemetry = True
-            return self._session.laps
-        raise DataNotLoadedError
+    async def fetch_lap_telemetry(self) -> Laps:
+        async with self.lock:
+            logger.logger.warning('Under lock')
+            if self._has_loaded_laps:
+                self._session.load(
+                    laps=False, telemetry=True, weather=False, messages=False
+                )
+            else:
+                self._session.load(laps=True, telemetry=True, weather=False, messages=False)
+            if self._session.laps is not None:
+                self._has_loaded_telemetry = True
+                return self._session.laps
 
-    @cached_property
-    def lap_telemetry(self) -> Laps:
+            raise DataNotLoadedError
+
+    @property
+    async def lap_telemetry(self) -> Laps:
         if self._has_loaded_telemetry:
             return self._session.laps
 
-        return self.retry(self.fetch_lap_telemetry)
+        return await self.fetch_lap_telemetry()
 
     @property
     def session_info(self) -> dict:

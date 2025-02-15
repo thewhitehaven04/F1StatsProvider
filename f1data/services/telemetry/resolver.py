@@ -13,14 +13,14 @@ def _pick_laps_telemetry(
     return laps.pick_driver(driver).pick_laps(lap_filter).get_telemetry()
 
 
-def get_interpolated_telemetry_comparison(
+async def get_interpolated_telemetry_comparison(
     year: str,
     round_number: int,
     session_identifier: SessionIdentifier,
     comparison: list[TelemetryRequest],
 ):
     loader = get_loader(year, round_number, session_identifier)
-    laps = loader.lap_telemetry
+    laps = await loader.lap_telemetry
     telemetries = []
     concat_laps = concat(
         [laps.pick_drivers(req.driver).pick_laps(req.lap_filter) for req in comparison]
@@ -72,11 +72,11 @@ def get_interpolated_telemetry_comparison(
     }
 
 
-def get_telemetry(
+async def get_telemetry(
     year: str, round_number: int, session_identifier: SessionIdentifier, driver: str, lap: str
 ):
-    loader = get_loader(year, round_number, session_identifier)
-    telemetry = _pick_laps_telemetry(loader.lap_telemetry, lap, driver)[
+    loader = get_loader(year=year, round=round_number, session_identifier=session_identifier)
+    telemetry = _pick_laps_telemetry(await loader.lap_telemetry, lap, driver)[
         [
             "Throttle",
             "Brake",
@@ -95,7 +95,7 @@ def get_telemetry(
     }
 
 
-def get_telemetries(
+async def get_telemetries(
     year: str,
     round_number: int,
     session_identifier: SessionIdentifier,
@@ -105,7 +105,7 @@ def get_telemetries(
     for query in queries:
         for lap in query.lap_filter:
             telemetries.append(
-                get_telemetry(year, round_number, session_identifier, query.driver, str(lap))
+                await get_telemetry(year, round_number, session_identifier, query.driver, str(lap))
             )
 
     return telemetries
