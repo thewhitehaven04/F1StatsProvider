@@ -25,18 +25,18 @@ def year_telemetry_events(
 
 
 @EventRouter.get(
-    "/{year}/round/{round}/session/{session_identifier}/summary",
+    "/{year}/round/{round_number}/session/{session_identifier}/summary",
     response_model=SessionSummary,
 )
 def get_session_summary(
     year: Annotated[int, Path(title="Year", gt=2018)],
-    round: Annotated[str, Path(title="Round number")],
+    round_number: Annotated[str, Path(title="Round number")],
     session_identifier: Annotated[SessionIdentifier, Path(title="Session Identifier")],
     response: Response,
 ):
     response.headers["Cache-Control"] = "max-age=4322600, public"
     return get_session_info(
         year=year,
-        round=int(round),
+        round=int(round_number),
         session_identifier=session_identifier,
     )

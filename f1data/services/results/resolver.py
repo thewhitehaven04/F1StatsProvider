@@ -88,7 +88,7 @@ def _resolve_qualifying_data(data: SessionResults):
 
 
 def get_results(year: str, session_identifier: SessionIdentifier, round: int):
-    loader = get_loader(year, round, session_identifier)
+    loader = get_loader(year=year, round=round, session_identifier=session_identifier)
     if session_identifier in [
         SessionIdentifier.FP1,
         SessionIdentifier.FP2,

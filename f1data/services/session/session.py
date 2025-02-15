@@ -19,8 +19,8 @@ class SessionLoader:
             year=int(year), identifier=session_identifier, gp=round
         )
         self.retry = Retry(
-            polling_interval_seconds=0.5,
-            timeout_seconds=10,
+            polling_interval_seconds=1, 
+            attempt_count=3,
             ignored_exceptions=(DataNotLoadedError,),
         )
 

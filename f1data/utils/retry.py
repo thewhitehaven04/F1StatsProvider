@@ -10,16 +10,15 @@ class Retry:
     def __init__(
         self,
         polling_interval_seconds: float,
-        timeout_seconds: float,
+        attempt_count: int,
         ignored_exceptions: tuple,
     ) -> None:
         self._polling_interval_seconds = polling_interval_seconds 
-        self._timeout = timeout_seconds
+        self._attempt_count = attempt_count
         self._ignored_exceptions = ignored_exceptions
 
     def __call__(self, cb: Callable[..., T], *args, **kwargs) -> T:
-        t_start = time.time()
-        while time.time() - t_start < self._timeout:
+        for i in range(self._attempt_count):
             try:
                 return cb(*args, **kwargs)
 

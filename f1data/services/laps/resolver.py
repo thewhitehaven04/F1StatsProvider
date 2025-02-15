@@ -172,9 +172,9 @@ def _resolve_lap_data(
 
 def get_resolved_laptime_data(
     year: str,
-    round: int,
+    round_number: int,
     session_identifier: SessionIdentifier,
     queries: list[SessionQuery]
 ) -> LapSelectionData:
-    loader = get_loader(year, round, session_identifier)
+    loader = get_loader(year, round_number, session_identifier)
     return _resolve_lap_data(loader._session, loader.laps, queries)
