@@ -87,14 +87,14 @@ def _resolve_qualifying_data(data: SessionResults):
     )
 
 
-def get_results(year: str, session_identifier: SessionIdentifier, round: int):
+async def get_results(year: str, session_identifier: SessionIdentifier, round: int):
     loader = get_loader(year=year, round=round, session_identifier=session_identifier)
     if session_identifier in [
         SessionIdentifier.FP1,
         SessionIdentifier.FP2,
         SessionIdentifier.FP3,
     ]:
-        return _resolve_practice_data(loader.results, loader.laps)
+        return _resolve_practice_data(loader.results, await loader.laps)
 
     if int(year) >= 2024:
         if (

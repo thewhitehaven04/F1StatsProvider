@@ -20,7 +20,7 @@ SessionRouter = APIRouter(tags=["Session level data"])
     "/season/{year}/round/{round_number}/session/{session_identifier}/laps",
     response_model=LapSelectionData,
 )
-def get_session_laptimes(
+async def get_session_laptimes(
     year: str,
     round_number: str,
     session_identifier: SessionIdentifier,
@@ -33,7 +33,7 @@ def get_session_laptimes(
     """
     background_tasks.add_task(preload_telemetry, year, round_number, session_identifier)  
     response.headers['Cache-Control'] = 'public, max-age=604800'
-    return get_resolved_laptime_data(year, int(round_number), session_identifier, body.queries)
+    return await get_resolved_laptime_data(year, int(round_number), session_identifier, body.queries)
 
 
 @SessionRouter.post(
