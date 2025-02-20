@@ -54,20 +54,21 @@ class SessionLoader:
         return False
 
     @property
-    def laps(self) -> Laps:
-        def fetch_laps() -> Laps:
-            self._session.load(
-                laps=True, telemetry=False, weather=False, messages=False
-            )
-            if self._session.laps is not None:
-                self._has_loaded_laps = True
-                return self._session.laps
-            raise DataNotLoadedError
+    async def laps(self) -> Laps:
+        async def fetch_laps() -> Laps:
+            async with self.lock: 
+                self._session.load(
+                    laps=True, telemetry=False, weather=False, messages=False
+                )
+                if self._session.laps is not None:
+                    self._has_loaded_laps = True
+                    return self._session.laps
+                raise DataNotLoadedError
 
         if self._has_loaded_laps:
             return self._session.laps
 
-        return self.retry(fetch_laps)
+        return await self.retry(fetch_laps)
 
     @property
     def results(self) -> SessionResults:
@@ -85,7 +86,6 @@ class SessionLoader:
 
     async def fetch_lap_telemetry(self) -> Laps:
         async with self.lock:
-            logger.logger.warning("Under lock")
             if self._has_loaded_laps:
                 self._session.load(
                     laps=False, telemetry=True, weather=False, messages=False

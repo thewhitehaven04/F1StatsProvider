@@ -87,7 +87,7 @@ def _resolve_qualifying_data(data: SessionResults):
     )
 
 
-def get_results(
+async def get_results(
     year: str,
     session_identifier: SessionIdentifier | int,
     round: int,
@@ -109,7 +109,7 @@ def get_results(
         ]
         or is_testing
     ):
-        return _resolve_practice_data(loader.results, loader.laps)
+        return _resolve_practice_data(loader.results, await loader.laps)
 
     if int(year) >= 2024:
         if (
