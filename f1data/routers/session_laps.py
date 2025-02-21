@@ -31,7 +31,7 @@ async def get_session_laptimes(
     """
     Retrieve laptime data for given session
     """
-    background_tasks.add_task(preload_telemetry, year, round_number, session_identifier)  
+    # background_tasks.add_task(preload_telemetry, year, round_number, session_identifier)  
     response.headers['Cache-Control'] = 'public, max-age=604800'
     return await get_resolved_laptime_data(year, int(round_number), session_identifier, body.queries)
 

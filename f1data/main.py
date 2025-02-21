@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+import time
+from fastapi import FastAPI, Request
+from fastapi import logger
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers.session_laps import SessionRouter
@@ -7,6 +9,23 @@ from routers.event import EventRouter
 
 
 app = FastAPI()
+logger.logger.setLevel(5)
+
+
+@app.middleware("http")
+async def logger_middleware(request: Request, next):
+    start = time.perf_counter()
+    logger.logger.warning(
+        f"------------------\nProcessing request to endpoint: {request.url}"
+    )
+    logger.logger.warning(f"Params: {request.query_params}")
+    logger.logger.warning(f"Body: {await request.body()}\n----------------")
+    response = await next(request)
+    logger.logger.warning(
+        f"Processing finished: {time.time_ns()/1_000_000_000}, in {time.perf_counter() - start}"
+    )
+    return response
+
 
 app.add_middleware(
     CORSMiddleware,
