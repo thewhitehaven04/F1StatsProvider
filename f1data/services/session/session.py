@@ -1,4 +1,4 @@
-from fastapi import logger
+from fastapi.concurrency import run_in_threadpool
 import fastf1
 from fastf1.core import Laps, SessionResults
 from pandas import DataFrame
@@ -55,20 +55,20 @@ class SessionLoader:
 
     @property
     async def laps(self) -> Laps:
-        async def fetch_laps() -> Laps:
-            async with self.lock: 
-                self._session.load(
-                    laps=True, telemetry=False, weather=False, messages=False
-                )
-                if self._session.laps is not None:
-                    self._has_loaded_laps = True
-                    return self._session.laps
-                raise DataNotLoadedError
+        def fetch_laps() -> Laps:
+            self._session.load(
+                laps=True, telemetry=False, weather=False, messages=False
+            )
+            if self._session.laps is not None:
+                self._has_loaded_laps = True
+                return self._session.laps
+            raise DataNotLoadedError
 
-        if self._has_loaded_laps:
-            return self._session.laps
+        async with self.lock: 
+            if self._has_loaded_laps:
+                return self._session.laps
 
-        return await self.retry(fetch_laps)
+            return await run_in_threadpool(fetch_laps)
 
     @property
     def results(self) -> SessionResults:
@@ -84,28 +84,30 @@ class SessionLoader:
             return self._session.results
         return self.retry(fetch_results)
 
-    async def fetch_lap_telemetry(self) -> Laps:
-        async with self.lock:
-            if self._has_loaded_laps:
-                self._session.load(
-                    laps=False, telemetry=True, weather=False, messages=False
-                )
-            else:
-                self._session.load(
-                    laps=True, telemetry=True, weather=False, messages=False
-                )
-            if self._session.laps is not None:
-                self._has_loaded_telemetry = True
-                return self._session.laps
 
-            raise DataNotLoadedError
+    def fetch_lap_telemetry(self) -> Laps:
+        if self._has_loaded_laps:
+            self._session.load(
+                laps=False, telemetry=True, weather=False, messages=False
+            )
+        else:
+            self._session.load(
+                laps=True, telemetry=True, weather=False, messages=False
+            )
+        if self._session.laps is not None:
+            self._has_loaded_telemetry = True
+            return self._session.laps
+
+        raise DataNotLoadedError
 
     @property
     async def lap_telemetry(self) -> Laps:
-        if self._has_loaded_telemetry:
-            return self._session.laps
 
-        return await self.fetch_lap_telemetry()
+        async with self.lock:
+            if self._has_loaded_telemetry:
+                return self._session.laps
+
+            return await run_in_threadpool(self.fetch_lap_telemetry)
 
     @property
     def session_info(self) -> dict:
@@ -150,7 +152,7 @@ class SessionLoader:
                 return circuit_info
             raise DataNotLoadedError
 
-        await self.retry(self.fetch_lap_telemetry)
+        await run_in_threadpool(self.fetch_lap_telemetry)
 
         circuit_info = self._session.get_circuit_info()
         if circuit_info: 
