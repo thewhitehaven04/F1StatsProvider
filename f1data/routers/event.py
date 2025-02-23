@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Path, Response 
+from fastapi import APIRouter, Path, Response
 from core.models.queries import SessionIdentifier
 from services.event_schedule.models import ScheduledEvent
 from services.event_schedule.event import get_schedule
@@ -39,4 +39,24 @@ def get_session_summary(
         year=year,
         round=int(round_number),
         session_identifier=session_identifier,
+        is_testing=False,
+    )
+
+
+@EventRouter.get(
+    "/{year}/round/{testing_round}/day/{day}/summary",
+    response_model=SessionSummary,
+)
+def get_testing_session_summary(
+    year: Annotated[int, Path(title="Year", gt=2018)],
+    testing_round: Annotated[str, Path(title="Testing round")],
+    day: Annotated[int, Path(title='Testing day')],
+    response: Response,
+):
+    response.headers["Cache-Control"] = "max-age=4322600, public"
+    return get_session_info(
+        year=year,
+        round=int(testing_round),
+        session_identifier=day,
+        is_testing=True,
     )

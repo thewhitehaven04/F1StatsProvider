@@ -32,11 +32,14 @@ class PracticeQueryRequest(BaseModel):
     round: str 
     type: Literal[SessionIdentifier.FP1, SessionIdentifier.FP2, SessionIdentifier.FP3]
 
+class TestingQueryRequest(BaseModel):
+    year: str
+    round: str
+    day: int 
 
 class SessionQuery(BaseModel):
     driver: str
     lap_filter: list[int] | None
-
 
 class SessionQueryFilter(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)

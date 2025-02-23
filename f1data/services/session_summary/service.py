@@ -1,4 +1,3 @@
-
 from core.models.queries import SessionIdentifier
 
 from services.session.session import get_loader
@@ -16,6 +15,7 @@ def _resolve_weather_data(weather_data):
         humidity_finish=weather_data["Humidity"].iloc[-1],
     )
 
+
 def _resolve_summary_data(session_info):
     return Summary(
         start_time=session_info["StartDate"],
@@ -27,9 +27,9 @@ def _resolve_summary_data(session_info):
 
 
 def get_session_info(
-    year: int, session_identifier: SessionIdentifier, round: int 
+    year: int, session_identifier: SessionIdentifier | int, round: int, is_testing: bool
 ):
-    loader = get_loader(year, round, session_identifier)
+    loader = get_loader(year, round, session_identifier, is_testing)
 
     weather = _resolve_weather_data(loader.weather)
     summary = _resolve_summary_data(loader.session_info)

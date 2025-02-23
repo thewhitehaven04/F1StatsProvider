@@ -16,10 +16,11 @@ def _pick_laps_telemetry(
 async def get_interpolated_telemetry_comparison(
     year: str,
     round_number: int,
-    session_identifier: SessionIdentifier,
+    session_identifier: SessionIdentifier | int,
     comparison: list[TelemetryRequest],
+    is_testing: bool,
 ):
-    loader = get_loader(year, round_number, session_identifier)
+    loader = get_loader(year, round_number, session_identifier, is_testing)
     laps = await loader.lap_telemetry
     telemetries = []
     concat_laps = concat(
@@ -73,9 +74,19 @@ async def get_interpolated_telemetry_comparison(
 
 
 async def get_telemetry(
-    year: str, round_number: int, session_identifier: SessionIdentifier, driver: str, lap: str
+    year: str,
+    round_number: int,
+    session_identifier: SessionIdentifier | int,
+    driver: str,
+    lap: str,
+    is_testing: bool,
 ):
-    loader = get_loader(year=year, round=round_number, session_identifier=session_identifier)
+    loader = get_loader(
+        year=year,
+        round=round_number,
+        session_identifier=session_identifier,
+        is_testing=is_testing,
+    )
     telemetry = _pick_laps_telemetry(await loader.lap_telemetry, lap, driver)[
         [
             "Throttle",
@@ -98,14 +109,22 @@ async def get_telemetry(
 async def get_telemetries(
     year: str,
     round_number: int,
-    session_identifier: SessionIdentifier,
+    session_identifier: SessionIdentifier | int,
+    is_testing: bool,
     queries: list[TelemetryRequest],
 ):
     telemetries = []
     for query in queries:
         for lap in query.lap_filter:
             telemetries.append(
-                await get_telemetry(year, round_number, session_identifier, query.driver, str(lap))
+                await get_telemetry(
+                    year,
+                    round_number,
+                    session_identifier,
+                    query.driver,
+                    str(lap),
+                    is_testing=is_testing,
+                )
             )
 
     return telemetries

@@ -87,13 +87,28 @@ def _resolve_qualifying_data(data: SessionResults):
     )
 
 
-def get_results(year: str, session_identifier: SessionIdentifier, round: int):
-    loader = get_loader(year=year, round=round, session_identifier=session_identifier)
-    if session_identifier in [
-        SessionIdentifier.FP1,
-        SessionIdentifier.FP2,
-        SessionIdentifier.FP3,
-    ]:
+def get_results(
+    year: str,
+    session_identifier: SessionIdentifier | int,
+    round: int,
+    is_testing: bool = False,
+):
+    loader = get_loader(
+        year=year,
+        round=round,
+        session_identifier=session_identifier,
+        is_testing=is_testing,
+    )
+
+    if (
+        session_identifier
+        in [
+            SessionIdentifier.FP1,
+            SessionIdentifier.FP2,
+            SessionIdentifier.FP3,
+        ]
+        or is_testing
+    ):
         return _resolve_practice_data(loader.results, loader.laps)
 
     if int(year) >= 2024:

@@ -14,13 +14,25 @@ class SessionLoader:
     """The loader is used to minimize the amount of data loaded"""
 
     def __init__(
-        self, year: str, round: int, session_identifier: SessionIdentifier
+        self,
+        year: str,
+        round: int | str,
+        session_identifier: SessionIdentifier | int,
+        is_testing: bool,
     ) -> None:
-        self._session = fastf1.get_session(
-            year=int(year), identifier=session_identifier, gp=round
+        self._session = (
+            fastf1.get_testing_session(
+                year=int(year),
+                test_number=int(round),
+                session_number=session_identifier,
+            )
+            if is_testing and isinstance(session_identifier, int)
+            else fastf1.get_session(
+                year=int(year), identifier=session_identifier, gp=round
+            )
         )
         self.retry = Retry(
-            polling_interval_seconds=1, 
+            polling_interval_seconds=1,
             attempt_count=3,
             ignored_exceptions=(DataNotLoadedError,),
         )
@@ -32,6 +44,14 @@ class SessionLoader:
         self._has_loaded_weather = False
 
         self.lock = Lock()
+
+    @staticmethod
+    def get_is_testing(year: str, round: int):
+        if round == 0:
+            return True
+        elif year in ["2018", "2019", "2022"] and round == 1:
+            return True
+        return False
 
     @property
     def laps(self) -> Laps:
@@ -65,13 +85,15 @@ class SessionLoader:
 
     async def fetch_lap_telemetry(self) -> Laps:
         async with self.lock:
-            logger.logger.warning('Under lock')
+            logger.logger.warning("Under lock")
             if self._has_loaded_laps:
                 self._session.load(
                     laps=False, telemetry=True, weather=False, messages=False
                 )
             else:
-                self._session.load(laps=True, telemetry=True, weather=False, messages=False)
+                self._session.load(
+                    laps=True, telemetry=True, weather=False, messages=False
+                )
             if self._session.laps is not None:
                 self._has_loaded_telemetry = True
                 return self._session.laps
@@ -120,20 +142,9 @@ class SessionLoader:
             return self._session.weather_data
         return self.retry(fetch_weather_data)
 
-    @property
-    def session(self):
-        self._session.load(
-            laps=False if self._has_loaded_laps else True,
-            telemetry=False if self._has_loaded_telemetry else True,
-            weather=False if self._has_loaded_weather else True,
-            # there is no case where we need to load messages
-            messages=False,
-        )
-        return self._session
 
-
-@lru_cache(maxsize=32)
+@lru_cache(maxsize=48)
 def get_loader(
-    year: str, round: int, session_identifier: SessionIdentifier
+    year: str, round: int, session_identifier: SessionIdentifier | int, is_testing: bool = False
 ) -> SessionLoader:
-    return SessionLoader(year, round, session_identifier)
+    return SessionLoader(year, round, session_identifier, is_testing)
