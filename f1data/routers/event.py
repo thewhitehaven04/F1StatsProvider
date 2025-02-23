@@ -13,14 +13,18 @@ EventRouter = APIRouter(prefix="/season", tags=["Event Schedule"])
 @EventRouter.get("/{year}", response_model=list[ScheduledEvent])
 def year_events(
     year: Annotated[int, Path(title="Year")],
+    response: Response
 ):
+    response.headers['Cache-Control'] = 'max-age=4322600, public'
     return get_schedule(year=year, backend="fastf1")
 
 
 @EventRouter.get("/{year}/telemetry", response_model=list[ScheduledEvent])
 def year_telemetry_events(
     year: Annotated[int, Path(title="Year", gt=2018)],
+    response: Response
 ):
+    response.headers['Cache-Control'] = 'max-age=4322600, public'
     return get_schedule(year=year)
 
 
