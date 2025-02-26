@@ -1,4 +1,6 @@
 from typing import Sequence
+
+from numpy import concatenate, interp
 from core.models.queries import SessionIdentifier, TelemetryRequest
 from services.session.session import get_loader
 from pandas import concat
@@ -35,36 +37,37 @@ async def get_interpolated_telemetry_comparison(
     reference_telemetry = _pick_laps_telemetry(
         laps, reference_lap["LapNumber"].iloc[0], reference_lap["Driver"].iloc[0]
     )
-    reference_distance = reference_telemetry["Distance"].iloc[-1]
-    sampling_rate = "250ms"
-    reference_telemetry.resample_channels(rule=sampling_rate)
+    reference_distance = reference_telemetry["Distance"].iat[-1]
+
+    def interpolate_bounds(channel):
+        channel_start = channel[1] - channel[0]
+        channel_end = channel[-1] - channel[-2]
+        return concatenate(
+            [[channel[0] - channel_start], channel, [channel[-1] + channel_end]]
+        )
 
     # interpolate comparison data
     for cmp_lap in comparison_laps.iterrows():
         driver_telemetry = _pick_laps_telemetry(
             laps, cmp_lap[1]["LapNumber"], cmp_lap[1]["Driver"]
         )
-
-        driver_telemetry.resample_channels(rule=sampling_rate)
-        driver_telemetry.reindex_like(reference_telemetry)
-        rolling_driver_speed_ms = (
-            driver_telemetry["Speed"].rolling(window=5, center=True).mean() / 3.6
+        q = driver_telemetry["Distance"].iat[-1] / reference_distance
+        lattice_distance = (
+            interpolate_bounds(driver_telemetry["Distance"].to_numpy()) * q
         )
-        driver_telemetry["Gap"] = (
-            (
-                reference_telemetry["RelativeDistance"]
-                - driver_telemetry["RelativeDistance"]
-            )
-            * reference_distance
-            / (rolling_driver_speed_ms)
+        lattice_time = interpolate_bounds(
+            driver_telemetry["Time"].dt.total_seconds().to_numpy()
         )
-
+        laptime_seq = interp(
+            reference_telemetry["Distance"], lattice_distance, lattice_time
+        )
+        delta = laptime_seq - reference_telemetry["Time"].dt.total_seconds()
         driver = cmp_lap[1]["Driver"]
         telemetries.append(
             {
                 "driver": driver,
                 "color": get_driver_color(driver, loader._session),
-                "comparison": driver_telemetry.to_dict(orient="list"),
+                "comparison": {"Gap": delta.tolist(), "Distance": lattice_distance.tolist()},
             }
         )
     return {

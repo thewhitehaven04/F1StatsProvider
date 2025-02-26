@@ -39,7 +39,6 @@ class DeltaData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     Distance: Sequence[float]
-    Speed: Sequence[float]
     Gap: Sequence[float]
 
 
