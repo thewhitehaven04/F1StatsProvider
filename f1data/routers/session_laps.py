@@ -95,7 +95,6 @@ async def get_session_lap_telemetries(
         is_testing=False,
     )
 
-
 @SessionRouter.post(
     "/season/{year}/testing_round/{round_number}/day/{day}/laps",
     response_model=LapSelectionData,

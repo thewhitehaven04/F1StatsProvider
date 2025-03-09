@@ -50,8 +50,24 @@ class DriverTelemetryComparison(BaseModel):
     comparison: DeltaData
 
 
+class CircuitDataInstance(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    X: float
+    Y: float
+    Number: int
+    Angle: float 
+    Distance: float
+
+class CircuitData(BaseModel): 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    corners: Sequence[CircuitDataInstance]
+    rotation: float
+
 class TelemetryComparison(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     reference: str
     telemetries: list[DriverTelemetryComparison]
+    circuit_data: CircuitData 

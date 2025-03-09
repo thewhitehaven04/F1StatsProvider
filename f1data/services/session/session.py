@@ -142,9 +142,28 @@ class SessionLoader:
             return self._session.weather_data
         return self.retry(fetch_weather_data)
 
+    @property
+    async def circuit_info(self):
+        if self._has_loaded_telemetry:
+            circuit_info = self._session.get_circuit_info()
+            if circuit_info: 
+                return circuit_info
+            raise DataNotLoadedError
+
+        await self.retry(self.fetch_lap_telemetry)
+
+        circuit_info = self._session.get_circuit_info()
+        if circuit_info: 
+            return circuit_info
+
+        raise DataNotLoadedError
+
 
 @lru_cache(maxsize=48)
 def get_loader(
-    year: str, round: int, session_identifier: SessionIdentifier | int, is_testing: bool = False
+    year: str,
+    round: int,
+    session_identifier: SessionIdentifier | int,
+    is_testing: bool = False,
 ) -> SessionLoader:
     return SessionLoader(year, round, session_identifier, is_testing)

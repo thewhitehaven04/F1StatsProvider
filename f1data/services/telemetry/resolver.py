@@ -39,6 +39,12 @@ async def get_interpolated_telemetry_comparison(
     )
     reference_distance = reference_telemetry["Distance"].iat[-1]
 
+    circuit_data = await loader.circuit_info
+    circuit_data = {
+        "corners": circuit_data.corners.to_dict(orient="records"),
+        "rotation": circuit_data.rotation,
+    }
+
     def interpolate_bounds(channel):
         channel_start = channel[1] - channel[0]
         channel_end = channel[-1] - channel[-2]
@@ -67,12 +73,16 @@ async def get_interpolated_telemetry_comparison(
             {
                 "driver": driver,
                 "color": get_driver_color(driver, loader._session),
-                "comparison": {"Gap": delta.tolist(), "Distance": lattice_distance.tolist()},
+                "comparison": {
+                    "Gap": delta.tolist(),
+                    "Distance": lattice_distance.tolist(),
+                },
             }
         )
     return {
         "telemetries": telemetries,
         "reference": reference_lap["Driver"].iloc[0],
+        "circuit_data": circuit_data,
     }
 
 
