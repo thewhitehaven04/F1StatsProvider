@@ -1,6 +1,7 @@
+from math import pi
 from typing import Sequence
 
-from numpy import concatenate, interp
+from numpy import concatenate, cos, interp, array, matmul, sin
 from core.models.queries import SessionIdentifier, TelemetryRequest
 from services.session.session import get_loader
 from pandas import concat
@@ -40,8 +41,20 @@ async def get_interpolated_telemetry_comparison(
     reference_distance = reference_telemetry["Distance"].iat[-1]
 
     circuit_data = await loader.circuit_info
+    corners = circuit_data.corners
+    rotation_rad = circuit_data.rotation * 180 / pi
+    rot_mat = array(
+        [
+            [cos(rotation_rad), sin(rotation_rad)],
+            [-sin(rotation_rad), cos(rotation_rad)],
+        ]
+    )
+    rotated_coordinates = matmul(corners.loc[:, ("X", "Y")].to_numpy(), rot_mat)
+    corners["X"] = rotated_coordinates[:, 0]
+    corners["Y"] = rotated_coordinates[:, 1]
+
     circuit_data = {
-        "corners": circuit_data.corners.to_dict(orient="records"),
+        "corners": corners.to_dict(orient="records"),
         "rotation": circuit_data.rotation,
     }
 
