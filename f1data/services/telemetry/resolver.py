@@ -12,7 +12,7 @@ def _pick_laps_telemetry(
     laps: Laps, lap_filter: Sequence[int] | int | str, driver: str
 ) -> Telemetry:
     lap_filter = int(lap_filter) if isinstance(lap_filter, str) else lap_filter
-    return laps.pick_driver(driver).pick_laps(lap_filter).get_telemetry()
+    return laps.pick_drivers(driver).pick_laps(lap_filter).get_telemetry()
 
 
 async def get_interpolated_telemetry_comparison(

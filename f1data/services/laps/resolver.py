@@ -81,9 +81,9 @@ def _filter_session(laps: Laps, queries: list[SessionQuery]) -> Laps:
     return concat(
         [
             (
-                laps.pick_driver(query.driver).pick_laps(query.lap_filter)
+                laps.pick_drivers(query.driver).pick_laps(query.lap_filter)
                 if query.lap_filter
-                else laps.pick_driver(query.driver)
+                else laps.pick_drivers(query.driver)
             )
             for query in queries
         ]
