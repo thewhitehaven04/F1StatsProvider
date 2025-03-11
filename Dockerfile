@@ -1,4 +1,4 @@
-FROM python:3.11.10-slim-bookworm
+FROM python:3.11.11-alpine3.21
 
 RUN pip install poetry
 COPY / . 
