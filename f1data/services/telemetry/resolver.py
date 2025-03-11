@@ -10,10 +10,11 @@ from numpy import (
     sin,
     min as np_min,
     max as np_max,
+    stack,
 )
 from core.models.queries import SessionIdentifier, TelemetryRequest
 from services.session.session import SessionLoader, get_loader
-from pandas import DataFrame, concat
+from pandas import DataFrame, Series, concat
 from fastf1.plotting import get_driver_color
 from fastf1.core import Telemetry, Laps
 
@@ -27,7 +28,8 @@ def _pick_laps_telemetry(
 
 async def generate_circuit_data(
     loader: SessionLoader,
-    reference_telemetry: DataFrame,
+    reference_telemetry: Telemetry,
+    reference_driver: str,
     laps: Laps,
     comparison_laps: Sequence[DataFrame],
 ):
@@ -49,7 +51,9 @@ async def generate_circuit_data(
     reference_telemetry["Y"] = rotated_coordinates[:, 1] - np_min(
         rotated_coordinates[:, 1]
     )
+
     driver_speed_interp_data = []
+
     for cmp_lap in comparison_laps.iterrows():
         comp = _pick_laps_telemetry(laps, cmp_lap[1]["LapNumber"], cmp_lap[1]["Driver"])
         driver_speed_interp_data.append(
@@ -59,29 +63,34 @@ async def generate_circuit_data(
                     xp=comp["RelativeDistance"],
                     fp=comp["Speed"],
                 ),
-                "driver": reference_telemetry.driver,
+                "driver": cmp_lap[1]["Driver"],
             }
         )
 
     driver_speed_interp_data.append(
         {
-            "driver": reference_telemetry.driver,
-            "speed": reference_telemetry["Speed"],
+            "driver": reference_driver,
+            "speed": reference_telemetry["Speed"].to_numpy(),
         }
     )
+    fastest_driver_series = []
 
-    for i in range(len(driver_speed_interp_data[0]['speed'])):
-        max_speed = max([item["speed"] for item in driver_speed_interp_data[i]])
-        for driver_speed in driver_speed_interp_data:
-            if driver_speed["speed"] == max_speed:
-                reference_telemetry.iloc[index, "FastestDriver"] = driver_speed[
-                    "driver"
-                ]
-                break
+    for i in range(len(driver_speed_interp_data[0]["speed"])):
+        speeds = stack([item["speed"] for item in driver_speed_interp_data], axis=-1)
+        for driver_speeds in speeds:
+            max_speed = np_max(driver_speeds)
+            for data in driver_speed_interp_data:
+                if data["speed"][i] == max_speed:
+                    fastest_driver_series.append(data["driver"])
+                    break
 
-    circuit_data = {
+    reference_telemetry["FastestDriver"] = Series(fastest_driver_series)
+    reference_telemetry["Color"] = reference_telemetry["FastestDriver"].map(
+        lambda x: get_driver_color(x, loader._session)
+    )
+    return {
         "position_data": reference_telemetry[
-            ["Distance", "RelativeDistance", "X", "Y", "FastestDriver"]
+            ["Distance", "RelativeDistance", "X", "Y", "FastestDriver", 'Color']
         ].to_dict(orient="records"),
         "rotation": circuit_data.rotation,
     }
@@ -106,14 +115,15 @@ async def get_interpolated_telemetry_comparison(
     comparison_laps = concat_laps.loc[concat_laps["LapTime"] != reference_laptime]
 
     # interpolate reference data
+    driver_name = reference_lap["Driver"].iloc[0]
     reference_telemetry = _pick_laps_telemetry(
-        laps, reference_lap["LapNumber"].iloc[0], reference_lap["Driver"].iloc[0]
+        laps, reference_lap["LapNumber"].iloc[0], driver_name
     )
-    reference_distance = reference_telemetry["Distance"].iat[-1]
-
     circuit_data = await generate_circuit_data(
-        loader, reference_telemetry, laps, comparison_laps
+        loader, reference_telemetry, driver_name, laps, comparison_laps
     )
+
+    reference_distance = reference_telemetry["Distance"].iat[-1]
 
     def interpolate_bounds(channel):
         channel_start = channel[1] - channel[0]

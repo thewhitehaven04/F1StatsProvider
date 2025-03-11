@@ -58,6 +58,7 @@ class CircuitDataInstance(BaseModel):
     Distance: float
     RelativeDistance: float
     FastestDriver: str
+    Color: str
 
 class CircuitData(BaseModel): 
     model_config = ConfigDict(arbitrary_types_allowed=True)
