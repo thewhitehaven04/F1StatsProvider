@@ -1,10 +1,19 @@
 from math import pi
 from typing import Sequence
 
-from numpy import concatenate, cos, interp, array, matmul, sin
+from numpy import (
+    concatenate,
+    cos,
+    interp,
+    array,
+    matmul,
+    sin,
+    min as np_min,
+    max as np_max,
+)
 from core.models.queries import SessionIdentifier, TelemetryRequest
-from services.session.session import get_loader
-from pandas import concat
+from services.session.session import SessionLoader, get_loader
+from pandas import DataFrame, concat
 from fastf1.plotting import get_driver_color
 from fastf1.core import Telemetry, Laps
 
@@ -14,6 +23,68 @@ def _pick_laps_telemetry(
 ) -> Telemetry:
     lap_filter = int(lap_filter) if isinstance(lap_filter, str) else lap_filter
     return laps.pick_drivers(driver).pick_laps(lap_filter).get_telemetry()
+
+
+async def generate_circuit_data(
+    loader: SessionLoader,
+    reference_telemetry: DataFrame,
+    laps: Laps,
+    comparison_laps: Sequence[DataFrame],
+):
+    circuit_data = await loader.circuit_info
+    rotation_rad = circuit_data.rotation / 180 * pi
+    rotated_coordinates = matmul(
+        reference_telemetry.loc[:, ("X", "Y")].to_numpy(),
+        array(
+            [
+                [cos(rotation_rad), sin(rotation_rad)],
+                [-sin(rotation_rad), cos(rotation_rad)],
+            ]
+        ),
+    )
+
+    reference_telemetry["X"] = rotated_coordinates[:, 0] - np_min(
+        rotated_coordinates[:, 0]
+    )
+    reference_telemetry["Y"] = rotated_coordinates[:, 1] - np_min(
+        rotated_coordinates[:, 1]
+    )
+    driver_speed_interp_data = []
+    for cmp_lap in comparison_laps.iterrows():
+        comp = _pick_laps_telemetry(laps, cmp_lap[1]["LapNumber"], cmp_lap[1]["Driver"])
+        driver_speed_interp_data.append(
+            {
+                "speed": interp(
+                    x=reference_telemetry["RelativeDistance"],
+                    xp=comp["RelativeDistance"],
+                    fp=comp["Speed"],
+                ),
+                "driver": reference_telemetry.driver,
+            }
+        )
+
+    driver_speed_interp_data.append(
+        {
+            "driver": reference_telemetry.driver,
+            "speed": reference_telemetry["Speed"],
+        }
+    )
+
+    for i in range(len(driver_speed_interp_data[0]['speed'])):
+        max_speed = max([item["speed"] for item in driver_speed_interp_data[i]])
+        for driver_speed in driver_speed_interp_data:
+            if driver_speed["speed"] == max_speed:
+                reference_telemetry.iloc[index, "FastestDriver"] = driver_speed[
+                    "driver"
+                ]
+                break
+
+    circuit_data = {
+        "position_data": reference_telemetry[
+            ["Distance", "RelativeDistance", "X", "Y", "FastestDriver"]
+        ].to_dict(orient="records"),
+        "rotation": circuit_data.rotation,
+    }
 
 
 async def get_interpolated_telemetry_comparison(
@@ -40,23 +111,9 @@ async def get_interpolated_telemetry_comparison(
     )
     reference_distance = reference_telemetry["Distance"].iat[-1]
 
-    circuit_data = await loader.circuit_info
-    corners = circuit_data.corners
-    rotation_rad = circuit_data.rotation * 180 / pi
-    rot_mat = array(
-        [
-            [cos(rotation_rad), sin(rotation_rad)],
-            [-sin(rotation_rad), cos(rotation_rad)],
-        ]
+    circuit_data = await generate_circuit_data(
+        loader, reference_telemetry, laps, comparison_laps
     )
-    rotated_coordinates = matmul(corners.loc[:, ("X", "Y")].to_numpy(), rot_mat)
-    corners["X"] = rotated_coordinates[:, 0]
-    corners["Y"] = rotated_coordinates[:, 1]
-
-    circuit_data = {
-        "corners": corners.to_dict(orient="records"),
-        "rotation": circuit_data.rotation,
-    }
 
     def interpolate_bounds(channel):
         channel_start = channel[1] - channel[0]

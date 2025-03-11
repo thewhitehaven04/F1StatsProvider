@@ -55,14 +55,14 @@ class CircuitDataInstance(BaseModel):
 
     X: float
     Y: float
-    Number: int
-    Angle: float 
     Distance: float
+    RelativeDistance: float
+    FastestDriver: str
 
 class CircuitData(BaseModel): 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    corners: Sequence[CircuitDataInstance]
+    position_data: Sequence[CircuitDataInstance]
     rotation: float
 
 class TelemetryComparison(BaseModel):
