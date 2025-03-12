@@ -7,7 +7,6 @@ from fastf1.core import DataNotLoadedError
 from anyio import Lock
 
 from core.models.queries import SessionIdentifier
-from utils.retry import Retry
 
 
 class SessionLoader:
@@ -31,12 +30,6 @@ class SessionLoader:
                 year=int(year), identifier=session_identifier, gp=round
             )
         )
-        self.retry = Retry(
-            polling_interval_seconds=1,
-            attempt_count=3,
-            ignored_exceptions=(DataNotLoadedError,),
-        )
-
         self._has_essentials_loaded = False
         self._has_loaded_laps = False
         self._has_loaded_telemetry = False
@@ -53,47 +46,41 @@ class SessionLoader:
             return True
         return False
 
+    def _fetch_laps(self) -> Laps:
+        self._session.load(laps=True, telemetry=False, weather=False, messages=False)
+        if self._session.laps is not None:
+            self._has_loaded_laps = True
+            return self._session.laps
+        raise DataNotLoadedError
+
     @property
     async def laps(self) -> Laps:
-        def fetch_laps() -> Laps:
-            self._session.load(
-                laps=True, telemetry=False, weather=False, messages=False
-            )
-            if self._session.laps is not None:
-                self._has_loaded_laps = True
-                return self._session.laps
-            raise DataNotLoadedError
-
-        async with self.lock: 
+        async with self.lock:
             if self._has_loaded_laps:
                 return self._session.laps
 
-            return await run_in_threadpool(fetch_laps)
+            return await run_in_threadpool(self._fetch_laps)
+
+    async def _fetch_results(self) -> SessionResults:
+        self._session.load(laps=False, telemetry=False, weather=False, messages=False)
+        if self._session.results is not None:
+            return self._session.results
+        raise DataNotLoadedError
 
     @property
-    def results(self) -> SessionResults:
-        def fetch_results() -> SessionResults:
-            self._session.load(
-                laps=False, telemetry=False, weather=False, messages=False
-            )
-            if self._session.results is not None:
+    async def results(self) -> SessionResults:
+        async with self.lock:
+            if self._has_essentials_loaded and self._session.results is not None:
                 return self._session.results
-            raise DataNotLoadedError
+            return await self._fetch_results()
 
-        if self._has_essentials_loaded and self._session.results is not None:
-            return self._session.results
-        return self.retry(fetch_results)
-
-
-    def fetch_lap_telemetry(self) -> Laps:
+    def _fetch_lap_telemetry(self) -> Laps:
         if self._has_loaded_laps:
             self._session.load(
                 laps=False, telemetry=True, weather=False, messages=False
             )
         else:
-            self._session.load(
-                laps=True, telemetry=True, weather=False, messages=False
-            )
+            self._session.load(laps=True, telemetry=True, weather=False, messages=False)
         if self._session.laps is not None:
             self._has_loaded_telemetry = True
             return self._session.laps
@@ -102,60 +89,57 @@ class SessionLoader:
 
     @property
     async def lap_telemetry(self) -> Laps:
-
         async with self.lock:
             if self._has_loaded_telemetry:
                 return self._session.laps
 
-            return await run_in_threadpool(self.fetch_lap_telemetry)
+            return await run_in_threadpool(self._fetch_lap_telemetry)
+
+    def _fetch_session_info(self) -> dict:
+        self._session.load(laps=False, telemetry=False, weather=False, messages=False)
+        if self._session.session_info:
+            self._has_essentials_loaded = True
+            return self._session.session_info
+        else:
+            raise DataNotLoadedError
 
     @property
     def session_info(self) -> dict:
-        def fetch_session_info() -> dict:
-            self._session.load(
-                laps=False, telemetry=False, weather=False, messages=False
-            )
-            if self._session.session_info:
-                self._has_essentials_loaded = True
-                return self._session.session_info
-            else:
-                raise DataNotLoadedError
-
         if self._has_essentials_loaded and self._session.session_info:
             return self._session.session_info
-        return self.retry(fetch_session_info)
+        return self._fetch_session_info()
+
+    def _fetch_weather_data(self) -> DataFrame:
+        self._session.load(
+            laps=False,
+            telemetry=False,
+            weather=True,
+            messages=False,
+        )
+        if self._session.weather_data is not None:
+            self._has_loaded_weather = True
+            return self._session.weather_data
+        else:
+            raise DataNotLoadedError
 
     @property
     def weather(self):
-        def fetch_weather_data() -> DataFrame:
-            self._session.load(
-                laps=False,
-                telemetry=False,
-                weather=True,
-                messages=False,
-            )
-            if self._session.weather_data is not None:
-                self._has_loaded_weather = True
-                return self._session.weather_data
-            else:
-                raise DataNotLoadedError
-
         if self._has_loaded_weather and self._session.weather_data is not None:
             return self._session.weather_data
-        return self.retry(fetch_weather_data)
+        return self._fetch_weather_data()
 
     @property
     async def circuit_info(self):
         if self._has_loaded_telemetry:
             circuit_info = self._session.get_circuit_info()
-            if circuit_info: 
+            if circuit_info:
                 return circuit_info
             raise DataNotLoadedError
 
-        await run_in_threadpool(self.fetch_lap_telemetry)
+        await run_in_threadpool(self._fetch_lap_telemetry)
 
         circuit_info = self._session.get_circuit_info()
-        if circuit_info: 
+        if circuit_info:
             return circuit_info
 
         raise DataNotLoadedError

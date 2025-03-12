@@ -1,3 +1,4 @@
+from datetime import datetime
 import time
 from fastapi import FastAPI, Request
 from fastapi import logger
@@ -19,10 +20,13 @@ async def logger_middleware(request: Request, next):
         f"------------------\nProcessing request to endpoint: {request.url}"
     )
     logger.logger.warning(f"Params: {request.query_params}")
-    logger.logger.warning(f"Body: {await request.body()}\n----------------")
+    logger.logger.warning(f"Body: {await request.body()}")
+    logger.logger.warning(
+        f"Processing started: {datetime.isoformat(datetime.now(), timespec='milliseconds')}"
+    )
     response = await next(request)
     logger.logger.warning(
-        f"Processing finished: {time.time_ns()/1_000_000_000}, in {time.perf_counter() - start}"
+        f"Processing finished: {datetime.isoformat(datetime.now(), timespec='milliseconds')}, in {time.perf_counter() - start:.3f}\n-------"
     )
     return response
 

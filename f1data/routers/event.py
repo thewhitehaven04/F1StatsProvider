@@ -16,7 +16,7 @@ def year_events(
     response: Response
 ):
     response.headers['Cache-Control'] = 'max-age=4322600, public'
-    return get_schedule(year=year, backend="fastf1")
+    return get_schedule(year=year)
 
 
 @EventRouter.get("/{year}/telemetry", response_model=list[ScheduledEvent])
