@@ -1,5 +1,5 @@
 from math import pi
-from typing import Sequence
+from typing import Sequence, TypedDict
 
 from numpy import (
     concatenate,
@@ -15,8 +15,18 @@ from numpy import (
 from core.models.queries import SessionIdentifier, TelemetryRequest
 from services.session.session import SessionLoader, get_loader
 from pandas import DataFrame, Series, concat
-from fastf1.plotting import get_driver_color
-from fastf1.core import Telemetry, Laps
+from fastf1.core import Telemetry, Laps, Session
+from fastf1.plotting import get_driver_style
+
+from utils.get_driver_color import STYLE_PRESET
+
+
+DriverStyle = TypedDict("DriverStyle", {"IsDashed": bool, "Color": str})
+
+
+def _get_driver_style(driver: str, session: Session) -> DriverStyle:
+    style = get_driver_style(driver, STYLE_PRESET, session)
+    return {"Color": style["color"], "IsDashed": style["linestyle"] == "dashed"}
 
 
 def _pick_laps_telemetry(
@@ -85,12 +95,26 @@ async def generate_circuit_data(
                     break
 
     reference_telemetry["FastestDriver"] = Series(fastest_driver_series)
-    reference_telemetry["Color"] = reference_telemetry["FastestDriver"].map(
-        lambda x: get_driver_color(x, loader._session)
+
+    reference_telemetry[["AlternativeStyle", "Color"]] = reference_telemetry[
+        "FastestDriver"
+    ].transform(
+        {
+            "AlternativeStyle": lambda drv: _get_driver_style(drv, loader._session)["IsDashed"],
+            "Color": lambda drv: _get_driver_style(drv, loader._session)["Color"],
+        }
     )
     return {
         "position_data": reference_telemetry[
-            ["Distance", "RelativeDistance", "X", "Y", "FastestDriver", 'Color']
+            [
+                "Distance",
+                "RelativeDistance",
+                "X",
+                "Y",
+                "FastestDriver",
+                "Color",
+                "AlternativeStyle",
+            ]
         ].to_dict(orient="records"),
         "rotation": circuit_data.rotation,
     }
@@ -149,13 +173,15 @@ async def get_interpolated_telemetry_comparison(
         )
         delta = laptime_seq - reference_telemetry["Time"].dt.total_seconds()
         driver = cmp_lap[1]["Driver"]
+        driver_style = _get_driver_style(driver, loader._session)
         telemetries.append(
             {
                 "driver": driver,
-                "color": get_driver_color(driver, loader._session),
+                "color": driver_style["Color"],
+                "alternative_style": driver_style["IsDashed"],
                 "comparison": {
-                    "Gap": delta.tolist(),
-                    "Distance": lattice_distance.tolist(),
+                    "gap": delta.tolist(),
+                    "distance": lattice_distance.tolist(),
                 },
             }
         )
@@ -192,9 +218,11 @@ async def get_telemetry(
             "Time",
         ]
     ]
+    driver_style = _get_driver_style(driver, loader._session)
     return {
         "driver": driver,
-        "color": get_driver_color(driver, loader._session),
+        "color": driver_style["Color"],
+        "alternative_style": driver_style["IsDashed"],
         "telemetry": telemetry.rename(columns={"nGear": "Gear"}).to_dict(orient="list"),
     }
 

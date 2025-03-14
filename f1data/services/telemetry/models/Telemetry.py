@@ -25,21 +25,15 @@ class DriverTelemetryData(BaseModel):
 
     driver: str
     color: str
+    alternative_style: bool 
     telemetry: TelemetryData
-
-
-class SessionTelemetryData(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    telemetry: list[DriverTelemetryData]
-    track_data: TelemetryData
 
 
 class DeltaData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    Distance: Sequence[float]
-    Gap: Sequence[float]
+    distance: Sequence[float]
+    gap: Sequence[float]
 
 
 class DriverTelemetryComparison(BaseModel):
@@ -47,6 +41,7 @@ class DriverTelemetryComparison(BaseModel):
 
     driver: str
     color: str
+    alternative_style: bool
     comparison: DeltaData
 
 
@@ -59,6 +54,7 @@ class CircuitDataInstance(BaseModel):
     RelativeDistance: float
     FastestDriver: str
     Color: str
+    AlternativeStyle: bool
 
 class CircuitData(BaseModel): 
     model_config = ConfigDict(arbitrary_types_allowed=True)
