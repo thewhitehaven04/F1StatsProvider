@@ -26,12 +26,12 @@ def _resolve_summary_data(session_info):
     )
 
 
-def get_session_info(
+async def get_session_info(
     year: int, session_identifier: SessionIdentifier | int, round: int, is_testing: bool
 ):
     loader = get_loader(year, round, session_identifier, is_testing)
 
-    weather = _resolve_weather_data(loader.weather)
-    summary = _resolve_summary_data(loader.session_info)
+    weather = _resolve_weather_data(await loader.weather)
+    summary = _resolve_summary_data(await loader.session_info)
 
     return SessionSummary(weather=weather, summary=summary)

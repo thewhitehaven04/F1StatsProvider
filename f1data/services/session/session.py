@@ -30,13 +30,16 @@ class SessionLoader:
                 year=int(year), identifier=session_identifier, gp=round
             )
         )
+
         self._has_essentials_loaded = False
         self._has_loaded_laps = False
         self._has_loaded_telemetry = False
-        self._has_loaded_messages = False
         self._has_loaded_weather = False
 
-        self.lock = Lock()
+        self.results_lock = Lock()
+        self.laps_lock = Lock()
+        self.telemetry_lock = Lock()
+        self.weather_lock = Lock()
 
     @staticmethod
     def get_is_testing(year: str, round: int):
@@ -55,13 +58,13 @@ class SessionLoader:
 
     @property
     async def laps(self) -> Laps:
-        async with self.lock:
+        async with self.laps_lock:
             if self._has_loaded_laps:
                 return self._session.laps
 
             return await run_in_threadpool(self._fetch_laps)
 
-    async def _fetch_results(self) -> SessionResults:
+    def _fetch_results(self) -> SessionResults:
         self._session.load(laps=False, telemetry=False, weather=False, messages=False)
         if self._session.results is not None:
             return self._session.results
@@ -69,10 +72,10 @@ class SessionLoader:
 
     @property
     async def results(self) -> SessionResults:
-        async with self.lock:
+        async with self.results_lock:
             if self._has_essentials_loaded and self._session.results is not None:
                 return self._session.results
-            return await self._fetch_results()
+            return await run_in_threadpool(self._fetch_results)
 
     def _fetch_lap_telemetry(self) -> Laps:
         if self._has_loaded_laps:
@@ -89,7 +92,7 @@ class SessionLoader:
 
     @property
     async def lap_telemetry(self) -> Laps:
-        async with self.lock:
+        async with self.telemetry_lock:
             if self._has_loaded_telemetry:
                 return self._session.laps
 
@@ -104,10 +107,11 @@ class SessionLoader:
             raise DataNotLoadedError
 
     @property
-    def session_info(self) -> dict:
-        if self._has_essentials_loaded and self._session.session_info:
-            return self._session.session_info
-        return self._fetch_session_info()
+    async def session_info(self) -> dict:
+        async with self.results_lock: 
+            if self._has_essentials_loaded and self._session.session_info:
+                return self._session.session_info
+            return await run_in_threadpool(self._fetch_session_info)
 
     def _fetch_weather_data(self) -> DataFrame:
         self._session.load(
@@ -123,10 +127,11 @@ class SessionLoader:
             raise DataNotLoadedError
 
     @property
-    def weather(self):
-        if self._has_loaded_weather and self._session.weather_data is not None:
-            return self._session.weather_data
-        return self._fetch_weather_data()
+    async def weather(self):
+        async with self.weather_lock: 
+            if self._has_loaded_weather and self._session.weather_data is not None:
+                return self._session.weather_data
+            return self._fetch_weather_data()
 
     @property
     async def circuit_info(self):
