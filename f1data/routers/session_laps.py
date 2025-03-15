@@ -31,9 +31,9 @@ async def get_session_laptimes(
     """
     Retrieve laptime data for given session
     """
-    background_tasks.add_task(
-        preload_telemetry, year, round_number, session_identifier, is_testing=False
-    )
+    # background_tasks.add_task(
+    #     preload_telemetry, year, round_number, session_identifier, is_testing=False
+    # )
     response.headers["Cache-Control"] = "public, max-age=604800"
     return await get_resolved_laptime_data(
         year=year,
@@ -100,7 +100,7 @@ async def get_session_lap_telemetries(
     "/season/{year}/testing_round/{round_number}/day/{day}/laps",
     response_model=LapSelectionData,
 )
-def get_testing_session_laptimes(
+async def get_testing_session_laptimes(
     year: str,
     round_number: str,
     day: int,
@@ -111,11 +111,11 @@ def get_testing_session_laptimes(
     """
     Retrieve laptime data for given session
     """
-    background_tasks.add_task(
-        preload_telemetry, year, round_number, day, is_testing=True
-    )
+    # background_tasks.add_task(
+    #     preload_telemetry, year, round_number, day, is_testing=True
+    # )
     response.headers["Cache-Control"] = "public, max-age=604800"
-    return get_resolved_laptime_data(
+    return await get_resolved_laptime_data(
         year=year,
         round_number=int(round_number),
         session_identifier=day,

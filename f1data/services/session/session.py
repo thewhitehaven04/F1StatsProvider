@@ -1,3 +1,6 @@
+from datetime import datetime
+import time
+from fastapi import logger
 from fastapi.concurrency import run_in_threadpool
 import fastf1
 from fastf1.core import Laps, SessionResults
@@ -50,7 +53,11 @@ class SessionLoader:
         return False
 
     def _fetch_laps(self) -> Laps:
+        start = time.perf_counter()
         self._session.load(laps=True, telemetry=False, weather=False, messages=False)
+        logger.logger.warning(
+            f"Fetching lap data finished in {time.perf_counter() - start:.3f}\n"
+        )
         if self._session.laps is not None:
             self._has_loaded_laps = True
             return self._session.laps
@@ -78,12 +85,19 @@ class SessionLoader:
             return await run_in_threadpool(self._fetch_results)
 
     def _fetch_lap_telemetry(self) -> Laps:
+        start = time.perf_counter()
         if self._has_loaded_laps:
             self._session.load(
                 laps=False, telemetry=True, weather=False, messages=False
             )
+            logger.logger.warning(
+                f"Fetching telemetry finished in {time.perf_counter() - start:.3f}\n"
+            )
         else:
             self._session.load(laps=True, telemetry=True, weather=False, messages=False)
+            logger.logger.warning(
+                f"Fetching telemetry with lap data finished in {time.perf_counter() - start:.3f}\n"
+            )
         if self._session.laps is not None:
             self._has_loaded_telemetry = True
             return self._session.laps
