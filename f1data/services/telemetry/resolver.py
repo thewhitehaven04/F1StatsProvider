@@ -1,5 +1,5 @@
 from math import pi
-from typing import Sequence, TypedDict
+from typing import Sequence 
 
 from numpy import (
     concatenate,
@@ -15,18 +15,9 @@ from numpy import (
 from core.models.queries import SessionIdentifier, TelemetryRequest
 from services.session.session import SessionLoader, get_loader
 from pandas import DataFrame, Series, concat
-from fastf1.core import Telemetry, Laps, Session
-from fastf1.plotting import get_driver_style
+from fastf1.core import Telemetry, Laps
 
-from utils.get_driver_color import STYLE_PRESET
-
-
-DriverStyle = TypedDict("DriverStyle", {"IsDashed": bool, "Color": str})
-
-
-def _get_driver_style(driver: str, session: Session) -> DriverStyle:
-    style = get_driver_style(driver, STYLE_PRESET, session)
-    return {"Color": style["color"], "IsDashed": style["linestyle"] == "dashed"}
+from utils.get_driver_color import get_driver_style
 
 
 def _pick_laps_telemetry(
@@ -100,8 +91,8 @@ async def generate_circuit_data(
         "FastestDriver"
     ].transform(
         {
-            "AlternativeStyle": lambda drv: _get_driver_style(drv, loader._session)["IsDashed"],
-            "Color": lambda drv: _get_driver_style(drv, loader._session)["Color"],
+            "AlternativeStyle": lambda drv: get_driver_style(drv, loader._session)["IsDashed"],
+            "Color": lambda drv: get_driver_style(drv, loader._session)["Color"],
         }
     )
     return {
@@ -173,7 +164,7 @@ async def get_interpolated_telemetry_comparison(
         )
         delta = laptime_seq - reference_telemetry["Time"].dt.total_seconds()
         driver = cmp_lap[1]["Driver"]
-        driver_style = _get_driver_style(driver, loader._session)
+        driver_style = get_driver_style(driver, loader._session)
         telemetries.append(
             {
                 "driver": driver,
@@ -218,7 +209,7 @@ async def get_telemetry(
             "Time",
         ]
     ]
-    driver_style = _get_driver_style(driver, loader._session)
+    driver_style = get_driver_style(driver, loader._session)
     return {
         "driver": driver,
         "color": driver_style["Color"],

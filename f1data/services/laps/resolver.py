@@ -1,10 +1,10 @@
 from pandas import DataFrame, NamedAgg, isna, concat
 from fastf1.core import Laps, Session 
-from fastf1.plotting import get_driver_color
 
 from core.models.queries import SessionIdentifier, SessionQuery
 from services.laps.models.laps import DriverLapData, LapSelectionData, StintData
 from services.session.session import get_loader
+from utils.get_driver_color import get_driver_style
 
 
 def _populate_with_data(laps: DataFrame):
@@ -144,7 +144,7 @@ def _resolve_lap_data(
             DriverLapData(
                 driver=index[0],
                 team=index[1],
-                color=get_driver_color(identifier=index[0], session=session),
+                color=get_driver_style(driver=index[0], session=session)['Color'],
                 stints=filtered_stint_groups.to_dict(orient="records"),
                 session_data=StintData(
                     total_laps=len(current_driver_laps),
