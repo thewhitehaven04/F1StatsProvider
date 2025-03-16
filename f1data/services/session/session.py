@@ -122,7 +122,7 @@ class SessionLoader:
 
     @property
     async def session_info(self) -> dict:
-        async with self.results_lock: 
+        async with self.results_lock:
             if self._has_essentials_loaded and self._session.session_info:
                 return self._session.session_info
             return await run_in_threadpool(self._fetch_session_info)
@@ -142,7 +142,7 @@ class SessionLoader:
 
     @property
     async def weather(self):
-        async with self.weather_lock: 
+        async with self.weather_lock:
             if self._has_loaded_weather and self._session.weather_data is not None:
                 return self._session.weather_data
             return self._fetch_weather_data()
