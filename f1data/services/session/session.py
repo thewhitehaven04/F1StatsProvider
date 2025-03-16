@@ -1,4 +1,5 @@
 from fastapi import logger
+from anyio import to_thread
 import fastf1
 from fastf1.core import Laps, SessionResults
 from pandas import DataFrame
@@ -42,6 +43,10 @@ class SessionLoader:
         self._has_loaded_telemetry = False
         self._has_loaded_messages = False
         self._has_loaded_weather = False
+
+        self.year = year
+        self.round = round 
+        self.session_identifier = session_identifier
 
         self.lock = Lock()
 
@@ -157,7 +162,14 @@ class SessionLoader:
             return circuit_info
 
         raise DataNotLoadedError
-
+    
+    async def fetch_all_data(self):
+        logger.logger.warning('Loading data for %s %s %s', self.year, self.session_identifier, self.round)
+        async with self.lock:
+            self._session.load(laps=True, telemetry=True, weather=True, messages=False)
+            self._has_loaded_laps = True
+            self._has_loaded_telemetry = True
+            self._has_loaded_weather = True
 
 @lru_cache(maxsize=48)
 def get_loader(

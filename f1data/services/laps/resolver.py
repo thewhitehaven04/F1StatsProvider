@@ -140,11 +140,13 @@ def _resolve_lap_data(
             total_laps=NamedAgg(column="LapTime", aggfunc="count"),
         )
 
+        style = get_driver_style(driver=index[0], session=session)
         lap_data.append(
             DriverLapData(
                 driver=index[0],
                 team=index[1],
-                color=get_driver_style(driver=index[0], session=session)['Color'],
+                color=style['Color'],
+                alternative_style=style['IsDashed'],
                 stints=filtered_stint_groups.to_dict(orient="records"),
                 session_data=StintData(
                     total_laps=len(current_driver_laps),

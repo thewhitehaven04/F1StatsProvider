@@ -100,6 +100,7 @@ class DriverLapData(BaseModel):
     driver: str
     team: str
     color: str
+    alternative_style: bool
     session_data: StintData
     stints: Sequence[StintData]
     laps: Sequence[LapTimingData]
