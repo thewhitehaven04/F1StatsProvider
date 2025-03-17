@@ -3,7 +3,7 @@ from fastf1.core import Laps, Session
 
 from core.models.queries import SessionIdentifier, SessionQuery
 from services.laps.models.laps import DriverLapData, LapSelectionData, StintData
-from services.session.session import get_loader
+from services.session.registry import get_loader
 from utils.get_driver_color import get_driver_style
 
 

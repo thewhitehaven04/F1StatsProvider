@@ -11,7 +11,7 @@ from services.prefetcher.load_recent import prefetch_recent_events
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield 
-    prefetch_recent_events()
+    # prefetch_recent_events()
 
 app = FastAPI(lifespan=lifespan)
 

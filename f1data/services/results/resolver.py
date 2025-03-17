@@ -2,7 +2,7 @@ import pandas as pd
 from fastf1.core import SessionResults, Laps
 
 from f1data.core.models.queries import SessionIdentifier
-from services.session.session import get_loader
+from services.session.registry import get_loader
 
 
 def _resolve_racelike_data(data: SessionResults):

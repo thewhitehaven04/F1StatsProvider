@@ -13,7 +13,8 @@ from numpy import (
     stack,
 )
 from core.models.queries import SessionIdentifier, TelemetryRequest
-from services.session.session import SessionLoader, get_loader
+from services.session.registry import get_loader
+from services.session.session import SessionLoader 
 from pandas import DataFrame, Series, concat
 from fastf1.core import Telemetry, Laps
 

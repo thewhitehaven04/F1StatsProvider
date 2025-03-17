@@ -1,5 +1,5 @@
 from core.models.queries import SessionIdentifier
-from services.session.session import get_loader
+from services.session.registry import get_loader
 
 
 def preload_telemetry(year: str, round: str, session: SessionIdentifier | int, is_testing: bool):

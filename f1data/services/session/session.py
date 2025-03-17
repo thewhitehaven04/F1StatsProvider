@@ -3,7 +3,6 @@ from fastapi import logger
 import fastf1
 from fastf1.core import Laps, SessionResults
 from pandas import DataFrame
-from pyparsing import lru_cache
 from fastf1.core import DataNotLoadedError
 
 from core.models.queries import SessionIdentifier
@@ -151,19 +150,20 @@ class SessionLoader:
     @property
     def circuit_info(self):
         with self.telemetry_lock: 
-            if self._has_loaded_telemetry and self._has_loaded_laps:
+            with self.laps_lock:
+                if self._has_loaded_telemetry and self._has_loaded_laps:
+                    circuit_info = self._session.get_circuit_info()
+                    if circuit_info: 
+                        return circuit_info
+                    raise DataNotLoadedError
+
+                self.fetch_lap_telemetry()
+
                 circuit_info = self._session.get_circuit_info()
                 if circuit_info: 
                     return circuit_info
+
                 raise DataNotLoadedError
-
-            self.fetch_lap_telemetry()
-
-            circuit_info = self._session.get_circuit_info()
-            if circuit_info: 
-                return circuit_info
-
-            raise DataNotLoadedError
     
     def fetch_all_data(self):
         logger.logger.warning('Loading data for %s %s %s', self.year, self.session_identifier, self.round)
@@ -174,12 +174,3 @@ class SessionLoader:
                     self._has_loaded_laps = True
                     self._has_loaded_telemetry = True
                     self._has_loaded_weather = True
-
-@lru_cache(maxsize=48)
-def get_loader(
-    year: str,
-    round: int,
-    session_identifier: SessionIdentifier | int,
-    is_testing: bool = False,
-) -> SessionLoader:
-    return SessionLoader(year, round, session_identifier, is_testing)
