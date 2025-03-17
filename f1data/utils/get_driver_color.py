@@ -6,7 +6,7 @@ DriverStyle = TypedDict("DriverStyle", {"IsDashed": bool, "Color": str})
 
 STYLE_PRESET = [
     {"color": "auto", "linestyle": "solid"},
-    {"color": "black", "linestyle": "dashed"},
+    {"color": "auto", "linestyle": "dashed"},
 ]
 
 

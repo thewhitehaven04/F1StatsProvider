@@ -45,6 +45,13 @@ async def generate_circuit_data(
             ]
         ),
     )
+    rotated_coordinates = matmul(rotated_coordinates.loc[:, ("X", "Y")].to_numpy(),
+                                 array(
+                                     [
+                                         [1, 0],
+                                         [0, -1]
+                                     ]
+                                 ))
 
     reference_telemetry["X"] = rotated_coordinates[:, 0] - np_min(
         rotated_coordinates[:, 0]
