@@ -1,5 +1,5 @@
 from math import pi
-from typing import Sequence 
+from typing import Sequence
 
 from numpy import (
     concatenate,
@@ -35,9 +35,18 @@ async def generate_circuit_data(
     comparison_laps: Sequence[DataFrame],
 ):
     circuit_data = await loader.circuit_info
-    rotation_rad = circuit_data.rotation / 180 * pi
-    rotated_coordinates = matmul(
+    mirrored_coordinates = matmul(
         reference_telemetry.loc[:, ("X", "Y")].to_numpy(),
+        array(
+            [
+                [1, 0],
+                [0, -1],
+            ]
+        ),
+    )
+    rotation_rad = -circuit_data.rotation / 180 * pi
+    rotated_coordinates = matmul(
+        mirrored_coordinates,
         array(
             [
                 [cos(rotation_rad), sin(rotation_rad)],
@@ -45,13 +54,6 @@ async def generate_circuit_data(
             ]
         ),
     )
-    rotated_coordinates = matmul(rotated_coordinates.loc[:, ("X", "Y")].to_numpy(),
-                                 array(
-                                     [
-                                         [1, 0],
-                                         [0, -1]
-                                     ]
-                                 ))
 
     reference_telemetry["X"] = rotated_coordinates[:, 0] - np_min(
         rotated_coordinates[:, 0]
@@ -98,7 +100,9 @@ async def generate_circuit_data(
         "FastestDriver"
     ].transform(
         {
-            "AlternativeStyle": lambda drv: get_driver_style(drv, loader._session)["IsDashed"],
+            "AlternativeStyle": lambda drv: get_driver_style(drv, loader._session)[
+                "IsDashed"
+            ],
             "Color": lambda drv: get_driver_style(drv, loader._session)["Color"],
         }
     )
