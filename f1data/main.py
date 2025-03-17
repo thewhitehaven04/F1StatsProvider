@@ -1,4 +1,4 @@
-from asyncio import create_task
+from asyncio import create_task, to_thread
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,11 +6,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers.session_laps import SessionRouter
 from routers.session_results import SessionResults
 from routers.event import EventRouter
-from services.prefetcher.load_recent import load_recent
+from services.prefetcher.load_recent import prefetch_recent_events
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_task(load_recent())
+    await prefetch_recent_events()
     yield 
 
 app = FastAPI(lifespan=lifespan)

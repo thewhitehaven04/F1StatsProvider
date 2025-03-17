@@ -1,5 +1,5 @@
 from fastapi import logger
-from anyio import to_thread
+from fastapi.concurrency import run_in_threadpool
 import fastf1
 from fastf1.core import Laps, SessionResults
 from pandas import DataFrame
@@ -166,7 +166,7 @@ class SessionLoader:
     async def fetch_all_data(self):
         logger.logger.warning('Loading data for %s %s %s', self.year, self.session_identifier, self.round)
         async with self.lock:
-            self._session.load(laps=True, telemetry=True, weather=True, messages=False)
+            await run_in_threadpool(lambda: self._session.load(laps=True, telemetry=True, weather=True, messages=False))
             self._has_loaded_laps = True
             self._has_loaded_telemetry = True
             self._has_loaded_weather = True
