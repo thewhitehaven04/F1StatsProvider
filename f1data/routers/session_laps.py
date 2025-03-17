@@ -48,13 +48,13 @@ def get_session_laptimes(
     "/season/{year}/round/{round_number}/session/{session_identifier}/telemetry/comparison",
     response_model=TelemetryComparison,
 )
-async def get_session_telemetry(
+def get_session_telemetry(
     year: str,
     round_number: str,
     session_identifier: SessionIdentifier,
     body: list[TelemetryRequest],
 ):
-    return await get_interpolated_telemetry_comparison(
+    return get_interpolated_telemetry_comparison(
         year, int(round_number), session_identifier, body, is_testing=False
     )
 
@@ -63,7 +63,7 @@ async def get_session_telemetry(
     "/season/{year}/round/{round_number}/session/{session_identifier}/lap/{lap}/driver/{driver}/telemetry",
     response_model=DriverTelemetryData,
 )
-async def get_session_lap_driver_telemetry(
+def get_session_lap_driver_telemetry(
     year: str,
     round_number: str,
     session_identifier: SessionIdentifier,
@@ -72,7 +72,7 @@ async def get_session_lap_driver_telemetry(
     response: Response,
 ):
     response.headers["Cache-Control"] = "public, max-age=604800"
-    return await get_telemetry(
+    return get_telemetry(
         year, int(round_number), session_identifier, driver, lap, is_testing=False
     )
 
@@ -81,13 +81,13 @@ async def get_session_lap_driver_telemetry(
     "/season/{year}/round/{round_number}/session/{session_identifier}/telemetries",
     response_model=list[DriverTelemetryData],
 )
-async def get_session_lap_telemetries(
+def get_session_lap_telemetries(
     year: str,
     round_number: str,
     session_identifier: SessionIdentifier,
     body: list[TelemetryRequest],
 ):
-    return await get_telemetries(
+    return get_telemetries(
         year=year,
         round_number=int(round_number),
         session_identifier=session_identifier,
@@ -128,13 +128,13 @@ def get_testing_session_laptimes(
     "/season/{year}/testing_round/{round_number}/day/{day}/telemetry/comparison",
     response_model=TelemetryComparison,
 )
-async def get_testing_session_telemetry(
+def get_testing_session_telemetry(
     year: str,
     round_number: str,
     day: int,
     body: list[TelemetryRequest],
 ):
-    return await get_interpolated_telemetry_comparison(
+    return get_interpolated_telemetry_comparison(
         year=year,
         round_number=int(round_number),
         session_identifier=day,
@@ -147,7 +147,7 @@ async def get_testing_session_telemetry(
     "/season/{year}/testing_round/{round_number}/day/{day}/lap/{lap}/driver/{driver}/telemetry",
     response_model=DriverTelemetryData,
 )
-async def get_testing_session_lap_driver_telemetry(
+def get_testing_session_lap_driver_telemetry(
     year: str,
     round_number: str,
     day: int,
@@ -156,7 +156,7 @@ async def get_testing_session_lap_driver_telemetry(
     response: Response,
 ):
     response.headers["Cache-Control"] = "public, max-age=604800"
-    return await get_telemetry(
+    return get_telemetry(
         year=year,
         round_number=int(round_number),
         session_identifier=day,
@@ -170,13 +170,13 @@ async def get_testing_session_lap_driver_telemetry(
     "/season/{year}/testing_round/{round_number}/day/{day}/telemetries",
     response_model=list[DriverTelemetryData],
 )
-async def get_testing_session_lap_telemetries(
+def get_testing_session_lap_telemetries(
     year: str,
     round_number: str,
     day: int,
     body: list[TelemetryRequest],
 ):
-    return await get_telemetries(
+    return get_telemetries(
         year=year,
         round_number=int(round_number),
         session_identifier=day,

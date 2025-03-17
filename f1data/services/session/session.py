@@ -1,11 +1,10 @@
+from threading import Lock
 from fastapi import logger
-from fastapi.concurrency import run_in_threadpool
 import fastf1
 from fastf1.core import Laps, SessionResults
 from pandas import DataFrame
 from pyparsing import lru_cache
 from fastf1.core import DataNotLoadedError
-from anyio import Lock
 
 from core.models.queries import SessionIdentifier
 from utils.retry import Retry
@@ -88,8 +87,8 @@ class SessionLoader:
             return self._session.results
         return self.retry(fetch_results)
 
-    async def fetch_lap_telemetry(self) -> Laps:
-        async with self.lock:
+    def fetch_lap_telemetry(self) -> Laps:
+        with self.lock:
             logger.logger.warning("Under lock")
             if self._has_loaded_laps:
                 self._session.load(
@@ -106,11 +105,11 @@ class SessionLoader:
             raise DataNotLoadedError
 
     @property
-    async def lap_telemetry(self) -> Laps:
+    def lap_telemetry(self) -> Laps:
         if self._has_loaded_telemetry:
             return self._session.laps
 
-        return await self.fetch_lap_telemetry()
+        return self.fetch_lap_telemetry()
 
     @property
     def session_info(self) -> dict:
@@ -148,14 +147,14 @@ class SessionLoader:
         return self.retry(fetch_weather_data)
 
     @property
-    async def circuit_info(self):
+    def circuit_info(self):
         if self._has_loaded_telemetry:
             circuit_info = self._session.get_circuit_info()
             if circuit_info: 
                 return circuit_info
             raise DataNotLoadedError
 
-        await self.retry(self.fetch_lap_telemetry)
+        self.retry(self.fetch_lap_telemetry)
 
         circuit_info = self._session.get_circuit_info()
         if circuit_info: 
@@ -163,10 +162,10 @@ class SessionLoader:
 
         raise DataNotLoadedError
     
-    async def fetch_all_data(self):
+    def fetch_all_data(self):
         logger.logger.warning('Loading data for %s %s %s', self.year, self.session_identifier, self.round)
-        async with self.lock:
-            await run_in_threadpool(lambda: self._session.load(laps=True, telemetry=True, weather=True, messages=False))
+        with self.lock:
+            self._session.load(laps=True, telemetry=True, weather=True, messages=False)
             self._has_loaded_laps = True
             self._has_loaded_telemetry = True
             self._has_loaded_weather = True

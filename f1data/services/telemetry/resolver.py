@@ -27,14 +27,14 @@ def _pick_laps_telemetry(
     return laps.pick_drivers(driver).pick_laps(lap_filter).get_telemetry()
 
 
-async def generate_circuit_data(
+def generate_circuit_data(
     loader: SessionLoader,
     reference_telemetry: Telemetry,
     reference_driver: str,
     laps: Laps,
     comparison_laps: Sequence[DataFrame],
 ):
-    circuit_data = await loader.circuit_info
+    circuit_data = loader.circuit_info
     mirrored_coordinates = matmul(
         reference_telemetry.loc[:, ("X", "Y")].to_numpy(),
         array(
@@ -122,7 +122,7 @@ async def generate_circuit_data(
     }
 
 
-async def get_interpolated_telemetry_comparison(
+def get_interpolated_telemetry_comparison(
     year: str,
     round_number: int,
     session_identifier: SessionIdentifier | int,
@@ -130,7 +130,7 @@ async def get_interpolated_telemetry_comparison(
     is_testing: bool,
 ):
     loader = get_loader(year, round_number, session_identifier, is_testing)
-    laps = await loader.lap_telemetry
+    laps = loader.lap_telemetry
     telemetries = []
     concat_laps = concat(
         [laps.pick_drivers(req.driver).pick_laps(req.lap_filter) for req in comparison]
@@ -145,7 +145,7 @@ async def get_interpolated_telemetry_comparison(
     reference_telemetry = _pick_laps_telemetry(
         laps, reference_lap["LapNumber"].iloc[0], driver_name
     )
-    circuit_data = await generate_circuit_data(
+    circuit_data = generate_circuit_data(
         loader, reference_telemetry, driver_name, laps, comparison_laps
     )
 
@@ -194,7 +194,7 @@ async def get_interpolated_telemetry_comparison(
     }
 
 
-async def get_telemetry(
+def get_telemetry(
     year: str,
     round_number: int,
     session_identifier: SessionIdentifier | int,
@@ -208,7 +208,7 @@ async def get_telemetry(
         session_identifier=session_identifier,
         is_testing=is_testing,
     )
-    telemetry = _pick_laps_telemetry(await loader.lap_telemetry, lap, driver)[
+    telemetry = _pick_laps_telemetry(loader.lap_telemetry, lap, driver)[
         [
             "Throttle",
             "Brake",
@@ -229,7 +229,7 @@ async def get_telemetry(
     }
 
 
-async def get_telemetries(
+def get_telemetries(
     year: str,
     round_number: int,
     session_identifier: SessionIdentifier | int,
@@ -240,7 +240,7 @@ async def get_telemetries(
     for query in queries:
         for lap in query.lap_filter:
             telemetries.append(
-                await get_telemetry(
+                get_telemetry(
                     year,
                     round_number,
                     session_identifier,
