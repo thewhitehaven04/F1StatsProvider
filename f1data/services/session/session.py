@@ -1,3 +1,4 @@
+from functools import cache
 from threading import Lock
 from fastapi import logger
 import fastf1
@@ -31,11 +32,6 @@ class SessionLoader:
                 year=int(year), identifier=session_identifier, gp=round
             )
         )
-        self.retry = Retry(
-            polling_interval_seconds=1,
-            attempt_count=3,
-            ignored_exceptions=(DataNotLoadedError,),
-        )
 
         self._has_essentials_loaded = False
         self._has_loaded_laps = False
@@ -47,7 +43,10 @@ class SessionLoader:
         self.round = round 
         self.session_identifier = session_identifier
 
-        self.lock = Lock()
+        self.essentials_lock = Lock()
+        self.laps_lock = Lock()
+        self.telemetry_lock = Lock()
+        self.weather_lock = Lock()
 
     @staticmethod
     def get_is_testing(year: str, round: int):
@@ -57,9 +56,8 @@ class SessionLoader:
             return True
         return False
 
-    @property
-    def laps(self) -> Laps:
-        def fetch_laps() -> Laps:
+    def _fetch_laps(self) -> Laps:
+        with self.laps_lock:
             self._session.load(
                 laps=True, telemetry=False, weather=False, messages=False
             )
@@ -68,14 +66,15 @@ class SessionLoader:
                 return self._session.laps
             raise DataNotLoadedError
 
+    @property
+    def laps(self) -> Laps:
         if self._has_loaded_laps:
             return self._session.laps
 
-        return self.retry(fetch_laps)
+        return self._fetch_laps()
 
-    @property
-    def results(self) -> SessionResults:
-        def fetch_results() -> SessionResults:
+    def _fetch_results(self) -> SessionResults:
+        with self.essentials_lock:
             self._session.load(
                 laps=False, telemetry=False, weather=False, messages=False
             )
@@ -83,21 +82,24 @@ class SessionLoader:
                 return self._session.results
             raise DataNotLoadedError
 
+    @property
+    def results(self) -> SessionResults:
         if self._has_essentials_loaded and self._session.results is not None:
             return self._session.results
-        return self.retry(fetch_results)
+
+        return self._fetch_results()
 
     def fetch_lap_telemetry(self) -> Laps:
-        with self.lock:
-            logger.logger.warning("Under lock")
+        with self.telemetry_lock:
             if self._has_loaded_laps:
                 self._session.load(
                     laps=False, telemetry=True, weather=False, messages=False
                 )
             else:
-                self._session.load(
-                    laps=True, telemetry=True, weather=False, messages=False
-                )
+                with self.laps_lock: 
+                    self._session.load(
+                        laps=True, telemetry=True, weather=False, messages=False
+                    )
             if self._session.laps is not None:
                 self._has_loaded_telemetry = True
                 return self._session.laps
@@ -111,9 +113,8 @@ class SessionLoader:
 
         return self.fetch_lap_telemetry()
 
-    @property
-    def session_info(self) -> dict:
-        def fetch_session_info() -> dict:
+    def _fetch_session_info(self) -> dict:
+        with self.essentials_lock:
             self._session.load(
                 laps=False, telemetry=False, weather=False, messages=False
             )
@@ -123,28 +124,32 @@ class SessionLoader:
             else:
                 raise DataNotLoadedError
 
+    @property
+    def session_info(self) -> dict:
         if self._has_essentials_loaded and self._session.session_info:
             return self._session.session_info
-        return self.retry(fetch_session_info)
+
+        return self._fetch_session_info()
+
+    def _fetch_weather_data(self) -> DataFrame:
+        self._session.load(
+            laps=False,
+            telemetry=False,
+            weather=True,
+            messages=False,
+        )
+        if self._session.weather_data is not None:
+            self._has_loaded_weather = True
+            return self._session.weather_data
+        else:
+            raise DataNotLoadedError
 
     @property
     def weather(self):
-        def fetch_weather_data() -> DataFrame:
-            self._session.load(
-                laps=False,
-                telemetry=False,
-                weather=True,
-                messages=False,
-            )
-            if self._session.weather_data is not None:
-                self._has_loaded_weather = True
-                return self._session.weather_data
-            else:
-                raise DataNotLoadedError
-
         if self._has_loaded_weather and self._session.weather_data is not None:
             return self._session.weather_data
-        return self.retry(fetch_weather_data)
+
+        return self._fetch_weather_data()
 
     @property
     def circuit_info(self):
@@ -154,7 +159,7 @@ class SessionLoader:
                 return circuit_info
             raise DataNotLoadedError
 
-        self.retry(self.fetch_lap_telemetry)
+        self.fetch_lap_telemetry()
 
         circuit_info = self._session.get_circuit_info()
         if circuit_info: 
@@ -164,11 +169,13 @@ class SessionLoader:
     
     def fetch_all_data(self):
         logger.logger.warning('Loading data for %s %s %s', self.year, self.session_identifier, self.round)
-        with self.lock:
-            self._session.load(laps=True, telemetry=True, weather=True, messages=False)
-            self._has_loaded_laps = True
-            self._has_loaded_telemetry = True
-            self._has_loaded_weather = True
+        with self.laps_lock:
+            with self.telemetry_lock:
+                with self.weather_lock: 
+                    self._session.load(laps=True, telemetry=True, weather=True, messages=False)
+                    self._has_loaded_laps = True
+                    self._has_loaded_telemetry = True
+                    self._has_loaded_weather = True
 
 @lru_cache(maxsize=48)
 def get_loader(
