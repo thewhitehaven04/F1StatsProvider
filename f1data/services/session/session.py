@@ -96,10 +96,9 @@ class SessionLoader:
                     laps=False, telemetry=True, weather=False, messages=False
                 )
             else:
-                with self.laps_lock: 
-                    self._session.load(
-                        laps=True, telemetry=True, weather=False, messages=False
-                    )
+                self._session.load(
+                    laps=True, telemetry=True, weather=False, messages=False
+                )
             if self._session.laps is not None:
                 self._has_loaded_telemetry = True
                 return self._session.laps
@@ -132,17 +131,18 @@ class SessionLoader:
         return self._fetch_session_info()
 
     def _fetch_weather_data(self) -> DataFrame:
-        self._session.load(
-            laps=False,
-            telemetry=False,
-            weather=True,
-            messages=False,
-        )
-        if self._session.weather_data is not None:
-            self._has_loaded_weather = True
-            return self._session.weather_data
-        else:
-            raise DataNotLoadedError
+        with self.weather_lock: 
+            self._session.load(
+                laps=False,
+                telemetry=False,
+                weather=True,
+                messages=False,
+            )
+            if self._session.weather_data is not None:
+                self._has_loaded_weather = True
+                return self._session.weather_data
+            else:
+                raise DataNotLoadedError
 
     @property
     def weather(self):
@@ -153,7 +153,7 @@ class SessionLoader:
 
     @property
     def circuit_info(self):
-        if self._has_loaded_telemetry:
+        if self._has_loaded_telemetry and self._has_loaded_laps:
             circuit_info = self._session.get_circuit_info()
             if circuit_info: 
                 return circuit_info
