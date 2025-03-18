@@ -3,7 +3,7 @@ import fastf1
 from services.session.session import SessionLoader
 
 
-def prefetch_recent_events():
+async def prefetch_recent_events():
     now = datetime.now()
     schedule = fastf1.get_event_schedule(year=now.year)
     past_weekends = schedule[schedule["Session1DateUtc"] < now].tail(1)
@@ -27,4 +27,4 @@ def prefetch_recent_events():
                         session_identifier=session_index + 1,
                         is_testing=is_testing,
                     )
-                    loader.fetch_all_data() 
+                    await loader.fetch_all_data() 

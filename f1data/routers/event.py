@@ -32,14 +32,14 @@ def year_telemetry_events(
     "/{year}/round/{round_number}/session/{session_identifier}/summary",
     response_model=SessionSummary,
 )
-def get_session_summary(
+async def get_session_summary(
     year: Annotated[int, Path(title="Year", gt=2018)],
     round_number: Annotated[str, Path(title="Round number")],
     session_identifier: Annotated[SessionIdentifier, Path(title="Session Identifier")],
     response: Response,
 ):
     response.headers["Cache-Control"] = "max-age=4322600, public"
-    return get_session_info(
+    return await get_session_info(
         year=year,
         round=int(round_number),
         session_identifier=session_identifier,
@@ -51,14 +51,14 @@ def get_session_summary(
     "/{year}/round/{testing_round}/day/{day}/summary",
     response_model=SessionSummary,
 )
-def get_testing_session_summary(
+async def get_testing_session_summary(
     year: Annotated[int, Path(title="Year", gt=2018)],
     testing_round: Annotated[str, Path(title="Testing round")],
     day: Annotated[int, Path(title='Testing day')],
     response: Response,
 ):
     response.headers["Cache-Control"] = "max-age=4322600, public"
-    return get_session_info(
+    return await get_session_info(
         year=year,
         round=int(testing_round),
         session_identifier=day,

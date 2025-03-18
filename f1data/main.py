@@ -5,7 +5,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers.session_laps import SessionRouter
 from routers.session_results import SessionResults
 from routers.event import EventRouter
-from services.prefetcher.load_recent import prefetch_recent_events
 
 
 @asynccontextmanager

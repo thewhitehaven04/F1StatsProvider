@@ -1,4 +1,4 @@
-from threading import Lock
+from asyncio import Lock
 from fastapi import logger
 import fastf1
 from fastf1.core import Laps, SessionResults
@@ -62,8 +62,8 @@ class SessionLoader:
         raise DataNotLoadedError
 
     @property
-    def laps(self) -> Laps:
-        with self.laps_lock:
+    async def laps(self) -> Laps:
+        async with self.laps_lock:
             if self._has_loaded_laps:
                 return self._session.laps
 
@@ -78,8 +78,8 @@ class SessionLoader:
         raise DataNotLoadedError
 
     @property
-    def results(self) -> SessionResults:
-        with self.essentials_lock:
+    async def results(self) -> SessionResults:
+        async with self.essentials_lock:
             if self._has_essentials_loaded and self._session.results is not None:
                 return self._session.results
 
@@ -101,8 +101,8 @@ class SessionLoader:
         raise DataNotLoadedError
 
     @property
-    def lap_telemetry(self) -> Laps:
-        with self.telemetry_lock:
+    async def lap_telemetry(self) -> Laps:
+        async with self.telemetry_lock:
             if self._has_loaded_telemetry:
                 return self._session.laps
 
@@ -119,8 +119,8 @@ class SessionLoader:
             raise DataNotLoadedError
 
     @property
-    def session_info(self) -> dict:
-        with self.essentials_lock:
+    async def session_info(self) -> dict:
+        async with self.essentials_lock:
             if self._has_essentials_loaded and self._session.session_info:
                 return self._session.session_info
 
@@ -140,17 +140,17 @@ class SessionLoader:
             raise DataNotLoadedError
 
     @property
-    def weather(self):
-        with self.weather_lock: 
+    async def weather(self):
+        async with self.weather_lock: 
             if self._has_loaded_weather and self._session.weather_data is not None:
                 return self._session.weather_data
 
             return self._fetch_weather_data()
 
     @property
-    def circuit_info(self):
-        with self.telemetry_lock: 
-            with self.laps_lock:
+    async def circuit_info(self):
+        async with self.telemetry_lock: 
+            async with self.laps_lock:
                 if self._has_loaded_telemetry and self._has_loaded_laps:
                     circuit_info = self._session.get_circuit_info()
                     if circuit_info: 
@@ -165,11 +165,11 @@ class SessionLoader:
 
                 raise DataNotLoadedError
     
-    def fetch_all_data(self):
+    async def fetch_all_data(self):
         logger.logger.warning('Loading data for %s %s %s', self.year, self.session_identifier, self.round)
-        with self.laps_lock:
-            with self.telemetry_lock:
-                with self.weather_lock: 
+        async with self.laps_lock:
+            async with self.telemetry_lock:
+                async with self.weather_lock: 
                     self._session.load(laps=True, telemetry=True, weather=True, messages=False)
                     self._has_loaded_laps = True
                     self._has_loaded_telemetry = True

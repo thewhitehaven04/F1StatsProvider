@@ -172,7 +172,7 @@ def _resolve_lap_data(
     )
 
 
-def get_resolved_laptime_data(
+async def get_resolved_laptime_data(
     year: str,
     round_number: int,
     session_identifier: SessionIdentifier | int,
@@ -180,4 +180,4 @@ def get_resolved_laptime_data(
     is_testing: bool = False,
 ) -> LapSelectionData:
     loader = get_loader(year=year, round=round_number, session_identifier=session_identifier, is_testing=is_testing)
-    return _resolve_lap_data(loader._session, loader.laps, queries)
+    return _resolve_lap_data(loader._session, await loader.laps, queries)
