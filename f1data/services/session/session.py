@@ -1,4 +1,5 @@
 from asyncio import Lock
+from anyio import sleep
 from fastapi import logger
 import fastf1
 from fastf1.core import Laps, SessionResults
