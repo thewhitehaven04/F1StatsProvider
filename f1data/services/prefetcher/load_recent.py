@@ -7,7 +7,7 @@ from services.session.session import SessionLoader
 async def prefetch_recent_events():
     now = datetime.now()
     schedule = fastf1.get_event_schedule(year=now.year)
-    past_weekends = schedule[schedule["Session1DateUtc"] < now].tail(1)
+    past_weekends = schedule[schedule["Session1DateUtc"] < now].tail(2)
     async with create_task_group() as tg:
         for weekend in past_weekends.iterrows():
             for session_index, key in enumerate(
