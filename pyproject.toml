@@ -6,7 +6,7 @@ authors = ["German <thewhitehaven04@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "~3.11"
-fastf1 = "3.5.0"
+fastf1 = "3.5.3"
 fastapi = {extras = ["hypercorn"], version = "^0.115.7"}
 pydantic = "2.9.2"
 hypercorn = "^0.17.3"

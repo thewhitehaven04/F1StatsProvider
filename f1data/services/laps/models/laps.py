@@ -39,6 +39,7 @@ class LapTimingData(BaseModel):
     IsPBS1: bool
     IsPBS2: bool
     IsPBS3: bool
+    LapNumber: int
 
     @field_serializer(
         "LapTime",

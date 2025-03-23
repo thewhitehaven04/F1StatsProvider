@@ -111,6 +111,7 @@ def _resolve_lap_data(
             "Compound",
             "PitInTime",
             "PitOutTime",
+            "LapNumber"
         ]
     ]
     _rename_sector_columns(formatted_laps)

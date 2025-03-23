@@ -318,14 +318,14 @@ standard = ["email-validator (>=2.0.0)", "fastapi-cli[standard] (>=0.0.5)", "htt
 
 [[package]]
 name = "fastf1"
-version = "3.5.0"
+version = "3.5.3"
 description = "Python package for accessing and analyzing Formula 1 results, schedules, timing data and telemetry."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "fastf1-3.5.0-py3-none-any.whl", hash = "sha256:e8cfe15f2af5c6c305f9cbce4602dee4984e1ae4c162f759d44168fc8993485c"},
-    {file = "fastf1-3.5.0.tar.gz", hash = "sha256:cadde305a7c844d89cab0493392cc0f3e096a37a2f248f69aa94c31e47aef890"},
+    {file = "fastf1-3.5.3-py3-none-any.whl", hash = "sha256:94ede57d7587e4c980b6745a955cc05890fecd932ed22b3b1b6774150bc50705"},
+    {file = "fastf1-3.5.3.tar.gz", hash = "sha256:eab5dbce9f28b41f27a0ef1cae0d235800337950b31505beec414d6c6ac5e857"},
 ]
 
 [package.dependencies]
@@ -1586,4 +1586,4 @@ h11 = ">=0.9.0,<1"
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.11"
-content-hash = "dea01e44c35cc41e83f7872c0fe541e87333860a0e4f4436052996d91534a947"
+content-hash = "342d3f44641e3ceef20219181a59b3021617e22aa1bbb463251cf9c2ca4f3dd2"
