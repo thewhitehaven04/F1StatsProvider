@@ -8,7 +8,6 @@ from fastf1.core import DataNotLoadedError
 
 from core.models.queries import SessionIdentifier
 
-
 class SessionLoader:
     """The loader is used to minimize the amount of data loaded"""
 
@@ -34,10 +33,11 @@ class SessionLoader:
         self._has_essentials_loaded = False
         self._has_loaded_laps = False
         self._has_loaded_telemetry = False
+        self._has_loaded_messages = False
         self._has_loaded_weather = False
 
         self.year = year
-        self.round = round
+        self.round = round 
         self.session_identifier = session_identifier
 
         self.essentials_lock = Lock()
@@ -54,7 +54,9 @@ class SessionLoader:
         return False
 
     def _fetch_laps(self) -> Laps:
-        self._session.load(laps=True, telemetry=False, weather=False, messages=False)
+        self._session.load(
+            laps=True, telemetry=False, weather=False, messages=False
+        )
         if self._session.laps is not None:
             self._has_loaded_laps = True
             return self._session.laps
@@ -69,13 +71,9 @@ class SessionLoader:
             return self._fetch_laps()
 
     def _fetch_results(self) -> SessionResults:
-        if self.session_identifier == SessionIdentifier.SPRINT_QUALIFYING:
-            self._session.load(laps=True, telemetry=False, weather=False, messages=True)
-        else:
-            self._session.load(
-                laps=False, telemetry=False, weather=False, messages=True
-            )
-
+        self._session.load(
+            laps=False, telemetry=False, weather=False, messages=False
+        )
         if self._session.results is not None:
             return self._session.results
         raise DataNotLoadedError
@@ -94,7 +92,9 @@ class SessionLoader:
                 laps=False, telemetry=True, weather=False, messages=False
             )
         else:
-            self._session.load(laps=True, telemetry=True, weather=False, messages=False)
+            self._session.load(
+                laps=True, telemetry=True, weather=False, messages=False
+            )
         if self._session.laps is not None:
             self._has_loaded_telemetry = True
             return self._session.laps
@@ -110,7 +110,9 @@ class SessionLoader:
             return self.fetch_lap_telemetry()
 
     def _fetch_session_info(self) -> dict:
-        self._session.load(laps=False, telemetry=False, weather=False, messages=False)
+        self._session.load(
+            laps=False, telemetry=False, weather=False, messages=False
+        )
         if self._session.session_info:
             self._has_essentials_loaded = True
             return self._session.session_info
@@ -140,7 +142,7 @@ class SessionLoader:
 
     @property
     async def weather(self):
-        async with self.weather_lock:
+        async with self.weather_lock: 
             if self._has_loaded_weather and self._session.weather_data is not None:
                 return self._session.weather_data
 
@@ -148,32 +150,28 @@ class SessionLoader:
 
     @property
     async def circuit_info(self):
-        async with self.telemetry_lock:
+        async with self.telemetry_lock: 
             async with self.laps_lock:
                 if self._has_loaded_telemetry and self._has_loaded_laps:
                     circuit_info = self._session.get_circuit_info()
-                    if circuit_info:
+                    if circuit_info: 
                         return circuit_info
                     raise DataNotLoadedError
 
                 self.fetch_lap_telemetry()
 
                 circuit_info = self._session.get_circuit_info()
-                if circuit_info:
+                if circuit_info: 
                     return circuit_info
 
                 raise DataNotLoadedError
-
+    
     async def fetch_all_data(self):
-        logger.logger.warning(
-            "Loading data for %s %s %s", self.year, self.session_identifier, self.round
-        )
+        logger.logger.warning('Loading data for %s %s %s', self.year, self.session_identifier, self.round)
         async with self.laps_lock:
             async with self.telemetry_lock:
-                async with self.weather_lock:
-                    self._session.load(
-                        laps=True, telemetry=True, weather=True, messages=False
-                    )
+                async with self.weather_lock: 
+                    self._session.load(laps=True, telemetry=True, weather=True, messages=False)
                     self._has_loaded_laps = True
                     self._has_loaded_telemetry = True
                     self._has_loaded_weather = True
