@@ -1,6 +1,6 @@
 import pandas as pd
 import fastf1
-from sqlalchemy import MetaData, Table, create_engine
+from sqlalchemy import MetaData, Table, create_engine, select
 from sqlalchemy.dialects.postgresql import insert
 
 
