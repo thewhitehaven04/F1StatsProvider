@@ -34,7 +34,7 @@ CREATE TABLE teams (
 CREATE TABLE team_season_colors (
     team_id SMALLINT,
     season_year SMALLINT,
-    color CHAR(7),
+    color CHAR(7) NOT NULL,
     PRIMARY KEY(team_id, season_year),
     CONSTRAINT fk_seasons_season_year FOREIGN KEY(season_year) REFERENCES Seasons(season_year) ON DELETE RESTRICT,
     CONSTRAINT fk_teams_id FOREIGN KEY(team_id) REFERENCES Teams(id) ON DELETE RESTRICT
@@ -166,9 +166,15 @@ CREATE TABLE driver_numbers (
     CONSTRAINT fk_driver_id FOREIGN KEY (driver_id) REFERENCES Drivers(id) ON DELETE RESTRICT,
     CONSTRAINT fk_season_year FOREIGN KEY (season_year) REFERENCES Seasons(season_year) ON DELETE RESTRICT
 );
-
-ALTER TABLE Laps
-ADD COLUMN laptime REAL GENERATED ALWAYS AS (sector_1_time + sector_2_time + sector_3_time) STORED;
+CREATE TABLE driver_team_changes (
+    driver_id VARCHAR(64),
+    timestamp_start TIMESTAMP NOT NULL,
+    timestamp_end TIMESTAMP,
+    team_id SMALLINT,
+    PRIMARY KEY (driver_id, timestamp_start),
+    CONSTRAINT fk_driver_id FOREIGN KEY (driver_id) REFERENCES Drivers(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_team_id FOREIGN KEY (team_id) REFERENCES Teams(id) ON DELETE RESTRICT
+)
 
 -- DROP TABLE race_session_results;
 -- DROP TABLE practice_session_results;
