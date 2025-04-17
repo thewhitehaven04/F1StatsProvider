@@ -3,6 +3,7 @@ from sqlalchemy import MetaData, Table, create_engine
 from sqlalchemy.dialects.postgresql import insert
 import fastf1
 import pandas as pd
+from scripts.db_population.connection import engine as postgres, con 
 
 
 def store_practice_laps(season: int):
@@ -104,13 +105,10 @@ def store_practice_laps(season: int):
 
 
 def insert_practice_laps(season: int):
-    postgres = create_engine(
-        "postgresql://germanbulavkin:postgres@127.0.0.1:5432/postgres"
-    )
     with open(f"practice_laps_{season}.json", "r") as file:
         laps = json.loads(file.read())
 
-    with postgres.connect() as pg_con:
+    with con as pg_con:
         laps_table = Table("laps", MetaData(), autoload_with=postgres)
         pg_con.execute(insert(table=laps_table).values(laps))
         pg_con.commit()
@@ -225,7 +223,7 @@ def insert_quali_laps(season: int):
     with open(f"quali_laps_{season}.json", "r") as file:
         laps = json.loads(file.read())
 
-    with postgres.connect() as pg_con:
+    with con as pg_con:
         laps_table = Table("laps", MetaData(), autoload_with=postgres)
         pg_con.execute(insert(table=laps_table).values(laps))
         pg_con.commit()
@@ -332,13 +330,10 @@ def store_race_laps(season: int):
 
 
 def insert_race_laps(season: int):
-    postgres = create_engine(
-        "postgresql://germanbulavkin:postgres@127.0.0.1:5432/postgres"
-    )
     with open(f"race_laps_{season}.json", "r") as file:
         laps = json.loads(file.read())
 
-    with postgres.connect() as pg_con:
+    with con as pg_con:
         laps_table = Table("laps", MetaData(), autoload_with=postgres)
         pg_con.execute(insert(table=laps_table).values(laps))
         pg_con.commit()

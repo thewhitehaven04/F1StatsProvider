@@ -3,6 +3,7 @@ import pandas as pd
 import fastf1
 from sqlalchemy import MetaData, Table, create_engine
 from sqlalchemy.dialects.postgresql import insert
+from scripts.db_population.connection import engine as postgres, con 
 
 
 def store_sprint_race_results(season: int):
@@ -62,16 +63,13 @@ def store_sprint_race_results(season: int):
 
 
 def insert_sprint_race_results(season: int):
-    postgres = create_engine(
-        "postgresql://germanbulavkin:postgres@127.0.0.1:5432/postgres"
-    )
     with open(f"base_race_results_{season}.json", "r") as file:
         results_arr = json.loads(file.read())
 
     with open(f"race_results_{season}.json", "r") as file:
         race_results = json.loads(file.read())
 
-    with postgres.connect() as pg_con:
+    with con as pg_con:
         metadata = MetaData()
         session_results_table = Table(
             "session_results", metadata, autoload_with=postgres
@@ -153,10 +151,7 @@ def insert_race_results(season: int):
     with open(f"race_results_{season}.json", "r") as file:
         race_results = json.loads(file.read())
 
-    postgres = create_engine(
-        "postgresql://germanbulavkin:postgres@127.0.0.1:5432/postgres"
-    )
-    with postgres.connect() as pg_con:
+    with con as pg_con:
         metadata = MetaData()
         session_results_table = Table(
             "session_results", metadata, autoload_with=postgres
@@ -217,9 +212,6 @@ def store_sprint_quali_results(season: int):
 
 
 def insert_sprint_quali_results(season: int):
-    postgres = create_engine(
-        "postgresql://germanbulavkin:postgres@127.0.0.1:5432/postgres"
-    )
     with open(f"base_sprint_quali_results_{season}.json", "r") as file:
         results_arr = json.loads(file.read())
 
@@ -287,16 +279,13 @@ def store_quali_results(season: int):
 
 
 def insert_quali_results(season: int):
-    postgres = create_engine(
-        "postgresql://germanbulavkin:postgres@127.0.0.1:5432/postgres"
-    )
     with open(f"base_quali_results_{season}.json", "r") as file:
         results_arr = json.loads(file.read())
 
     with open(f"quali_results_{season}.json", "r") as file:
         quali_results = json.loads(file.read())
 
-    with postgres.connect() as pg_con:
+    with con as pg_con:
         metadata = MetaData()
         session_results_table = Table(
             "session_results", metadata, autoload_with=postgres
@@ -369,11 +358,7 @@ def store_practice_results(season: int):
 
 
 def insert_practice_results(season: int):
-    postgres = create_engine(
-        "postgresql://germanbulavkin:postgres@127.0.0.1:5432/postgres"
-    )
-
-    with postgres.connect() as pg_con:
+    with con as pg_con:
         metadata = MetaData()
         session_results_table = Table(
             "session_results", metadata, autoload_with=postgres
@@ -427,12 +412,9 @@ def store_testing_sessions(season: int):
 
 
 def insert_testing_sessions(season: int):
-    postgres = create_engine(
-        "postgresql://germanbulavkin:postgres@127.0.0.1:5432/postgres"
-    )
     with open(f"/sessions_{season}.json", "r") as file:
         sessions = json.loads(file.read())
-        with postgres.connect() as pg_con:
+        with con as pg_con:
             events_sessions_table = Table(
                 "event_sessions", MetaData(), autoload_with=postgres
             )

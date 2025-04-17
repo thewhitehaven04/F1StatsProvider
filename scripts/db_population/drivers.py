@@ -1,9 +1,12 @@
+from itertools import pairwise, product
 import json
 from fastapi import logger
 import pandas as pd
 import fastf1
-from sqlalchemy import MetaData, Table, create_engine
+from sqlalchemy import MetaData, Table, select, update
 from sqlalchemy.dialects.postgresql import insert
+from scripts.db_population.connection import engine as postgres, con
+
 
 def store_driver_data_to_json():
     years = range(2024, 2025, 1)
@@ -43,20 +46,94 @@ def store_driver_data_to_json():
 
 
 def insert_drivers_into_db():
-    postgres = create_engine(
-        "postgresql://germanbulavkin:postgres@127.0.0.1:5432/postgres"
-    )
     with open("./drivers.json", "r") as drivers_file:
         drivers = json.loads(drivers_file.read())
-        with postgres.connect() as pg_con:
-            teams_table = Table("drivers", MetaData(), autoload_with=postgres)
-            for driver in drivers:
-                try:
+    with con as pg_con:
+        teams_table = Table("drivers", MetaData(), autoload_with=postgres)
+        for driver in drivers:
+            try:
+                pg_con.execute(
+                    insert(table=teams_table)
+                    .values(driver)
+                    .on_conflict_do_nothing(constraint="drivers_pkey")
+                )
+                pg_con.commit()
+            except:
+                logger.logger.error(f"Unable to insert {driver}")
+
+
+def insert_driver_team_changes(season: int):
+    schedule = fastf1.get_event_schedule(year=season, include_testing=False)
+    driver_team_changes_table = Table(
+        "driver_team_changes", MetaData(), autoload_with=postgres
+    )
+    sessions = product(schedule["RoundNumber"].values, range(1, 6))
+
+    previous_row = None
+    with con as pg_con:
+        teams_table = Table("teams", MetaData(), autoload_with=postgres)
+        previous_date = None
+        for prev, curr in pairwise(sessions):
+            session = fastf1.get_session(year=season, identifier=curr[1], gp=curr[0])
+            session.load(laps=False, telemetry=False, weather=False, messages=False)
+            results = session.results
+            for result in results.itertuples():
+                driver = result.BroadcastName
+                team = result.TeamName
+                date = session.date
+
+                previous_row = pg_con.execute(
+                    select(driver_team_changes_table)
+                    .where(
+                        driver_team_changes_table.c.driver_id == driver,
+                        driver_team_changes_table.c.timestamp_end == None,
+                    )
+                    .order_by(driver_team_changes_table.c.timestamp_start.desc())
+                ).fetchone()
+
+                team_id = (
                     pg_con.execute(
-                        insert(table=teams_table)
-                        .values(driver)
-                        .on_conflict_do_nothing(constraint="drivers_pkey")
+                        select(teams_table).where(
+                            teams_table.c.team_display_name == team
+                        )
+                    )
+                    .fetchone()
+                    .id
+                )
+                if not previous_row:
+                    pg_con.execute(
+                        insert(driver_team_changes_table).values(
+                            {
+                                "driver_id": driver,
+                                "timestamp_start": date,
+                                "timestamp_end": None,
+                                "team_id": team_id,
+                            }
+                        )
                     )
                     pg_con.commit()
-                except:
-                    logger.logger.error(f"Unable to insert {driver}")
+                    continue
+
+                elif previous_row.team_id == team_id:
+                    continue
+
+                pg_con.execute(
+                    update(driver_team_changes_table)
+                    .values({"timestamp_end": previous_date})
+                    .where(
+                        driver_team_changes_table.c.driver_id == driver,
+                        driver_team_changes_table.c.team_id == previous_row.team_id,
+                    )
+                )
+                pg_con.execute(
+                    insert(driver_team_changes_table).values(
+                        {
+                            "driver_id": driver,
+                            "timestamp_start": date,
+                            "timestamp_end": None,
+                            "team_id": team_id,
+                        }
+                    )
+                )
+                pg_con.commit()
+                previous_date = date

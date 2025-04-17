@@ -3,13 +3,10 @@ import pandas as pd
 import fastf1
 from sqlalchemy import MetaData, Table, create_engine
 from sqlalchemy.dialects.postgresql import insert
-
+from scripts.db_population.connection import engine as postgres, con 
 
 def insert_events_into_db():
     years = range(2019, 2026, 1)
-    postgres = create_engine(
-        "postgresql://germanbulavkin:postgres@127.0.0.1:5432/postgres"
-    )
     schedules = []
     for year in years:
         schedule = fastf1.get_event_schedule(year=year)[
@@ -28,7 +25,7 @@ def insert_events_into_db():
 
     schedule = pd.concat(schedules)
 
-    with postgres.connect() as pg_con:
+    with con as pg_con:
         events_table = Table("events", MetaData(), autoload_with=postgres)
         pg_con.execute(
             insert(table=events_table).values(schedule.to_dict(orient="records"))
@@ -64,14 +61,12 @@ def store_event_sessions(season: int):
 
 
 def insert_event_sessions(season: int):
-    postgres = create_engine(
-        "postgresql://germanbulavkin:postgres@127.0.0.1:5432/postgres"
-    )
     with open(f"/sessions_{season}.json", "r") as file:
         sessions = json.loads(file.read())
-        with postgres.connect() as pg_con:
-            events_sessions_table = Table(
-                "event_sessions", MetaData(), autoload_with=postgres
-            )
-            pg_con.execute(insert(table=events_sessions_table).values(sessions))
-            pg_con.commit()
+
+    with con as pg_con:
+        events_sessions_table = Table(
+            "event_sessions", MetaData(), autoload_with=postgres
+        )
+        pg_con.execute(insert(table=events_sessions_table).values(sessions))
+        pg_con.commit()

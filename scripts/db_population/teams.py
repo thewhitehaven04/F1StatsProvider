@@ -1,14 +1,14 @@
 import pandas as pd
 import fastf1
-from sqlalchemy import MetaData, Table, create_engine, select
+from sqlalchemy import MetaData, Table, select
 from sqlalchemy.dialects.postgresql import insert
+
+from scripts.db_population.connection import engine as postgres, con 
+
 
 
 def insert_teams_into_db():
     years = range(2018, 2026, 1)
-    postgres = create_engine(
-        "postgresql://germanbulavkin:postgres@127.0.0.1:5432/postgres"
-    )
     year_data: list[pd.DataFrame] = []
     for year in years:
         session = fastf1.get_session(year=year, gp=1, identifier="Practice 1")
@@ -25,7 +25,7 @@ def insert_teams_into_db():
             }
         )
     )
-    with postgres.connect() as pg_con:
+    with con as pg_con:
         teams_table = Table("teams", MetaData(), autoload_with=postgres)
         pg_con.execute(
             insert(table=teams_table).values(all_teams.to_dict(orient="records"))
@@ -37,9 +37,6 @@ def insert_teams_into_db():
 
 def insert_team_colors_into_db():
     years = range(2019, 2026, 1)
-    postgres = create_engine(
-        "postgresql://germanbulavkin:postgres@127.0.0.1:5432/postgres"
-    )
     for year in years:
         session = fastf1.get_session(year=year, gp=1, identifier="Practice 1")
         session.load(laps=True, telemetry=False, weather=False, messages=False)
@@ -51,7 +48,7 @@ def insert_team_colors_into_db():
         )
         results[["season_year"]] = year
 
-        with postgres.connect() as pg_con:
+        with con as pg_con:
             metadata = MetaData()
             teams_table = Table("teams", metadata, autoload_with=postgres)
             teams = pg_con.execute(select(teams_table)).all()

@@ -1,3 +1,4 @@
+from itertools import batched
 import fastf1
 from sqlalchemy import create_engine, MetaData, Table, select
 from sqlalchemy.dialects.postgresql import insert
@@ -5,13 +6,12 @@ import pandas as pd
 import json
 from fastapi import logger
 
+from scripts.db_population.connection import con, engine as postgres
+
 
 def store_practice_telemetry(season: int):
     telemetries = []
     schedule = fastf1.get_event_schedule(year=season, include_testing=False)
-    postgres = create_engine(
-        "postgresql://germanbulavkin:postgres@127.0.0.1:5432/postgres"
-    )
     laps_table = Table("laps", MetaData(), autoload_with=postgres)
 
     with postgres.connect() as pg_con:
@@ -108,14 +108,11 @@ def insert_practice_telemetry(season: int):
         pg_con.execute(insert(table=telemetry_table).values(file_read))
         pg_con.commit()
 
-ef store_race_telemetry(season: int):
+def store_race_telemetry(season: int):
     telemetries = []
     schedule = fastf1.get_event_schedule(year=season, include_testing=False)
-    postgres = create_engine(
-        "postgresql://germanbulavkin:postgres@127.0.0.1:5432/postgres"
-    )
     laps_table = Table("laps", MetaData(), autoload_with=postgres)
-    with postgres.connect() as pg_con:
+    with con as pg_con:
         for round_number in schedule['RoundNumber'].values:
             sessions = [5] if schedule[schedule["RoundNumber"] == round_number]['EventFormat'].iloc[0] == 'conventional' else [3, 5]
             for identifier in sessions: 
