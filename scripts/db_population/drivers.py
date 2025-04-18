@@ -1,4 +1,4 @@
-from itertools import pairwise, product
+from itertools import product
 import json
 from fastapi import logger
 import pandas as pd
@@ -73,7 +73,7 @@ def insert_driver_team_changes(season: int):
     with con as pg_con:
         teams_table = Table("teams", MetaData(), autoload_with=postgres)
         previous_date = None
-        for prev, curr in pairwise(sessions):
+        for curr in sessions:
             session = fastf1.get_session(year=season, identifier=curr[1], gp=curr[0])
             session.load(laps=False, telemetry=False, weather=False, messages=False)
             results = session.results
@@ -137,3 +137,31 @@ def insert_driver_team_changes(season: int):
                 )
                 pg_con.commit()
                 previous_date = date
+    
+def insert_driver_numbers(season: int):
+    schedule = fastf1.get_event_schedule(year=season, include_testing=False)
+
+    with con as pg_con:
+        driver_numbers_table = Table(
+            "driver_numbers", MetaData(), autoload_with=postgres
+        )
+        for round_number in schedule["RoundNumber"].values:
+            for identifier in range(1, 4):
+                session = fastf1.get_session(
+                    year=season, gp=round_number, identifier=identifier
+                )
+                session.load(laps=True, weather=False, messages=False, telemetry=False)
+                results = session.results[["DriverNumber", "BroadcastName"]]
+                for result in results.itertuples():
+                    pg_con.execute(
+                        insert(driver_numbers_table)
+                        .values(
+                            {
+                                "driver_id": result.BroadcastName,
+                                "season_year": season,
+                                "driver_number": result.DriverNumber,
+                            }
+                        )
+                        .on_conflict_do_nothing()
+                    )
+        pg_con.commit()

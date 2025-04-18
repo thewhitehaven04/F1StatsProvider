@@ -1,7 +1,7 @@
 import json
 import pandas as pd
 import fastf1
-from sqlalchemy import MetaData, Table, create_engine
+from sqlalchemy import MetaData, Table 
 from sqlalchemy.dialects.postgresql import insert
 from scripts.db_population.connection import engine as postgres, con 
 
