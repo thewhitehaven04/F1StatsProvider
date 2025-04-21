@@ -158,6 +158,8 @@ CREATE TABLE Laps (
     driver_id VARCHAR(64) NOT NULL,
     session_type_id VARCHAR(32),
     season_year SMALLINT,
+    pit_in_time REAL,
+    pit_out_time REAL,
     CONSTRAINT fk_session_type_id FOREIGN KEY (session_type_id) REFERENCES session_types (id) ON DELETE RESTRICT,
     CONSTRAINT fk_event_name_season_year FOREIGN KEY (event_name, season_year) REFERENCES Events (event_name, season_year) ON DELETE RESTRICT,
     CONSTRAINT fk_compound_id FOREIGN KEY (compound_id) REFERENCES compounds (id) ON DELETE RESTRICT,
