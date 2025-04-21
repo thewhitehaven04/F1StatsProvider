@@ -3,7 +3,7 @@ from sqlalchemy import MetaData, Table, create_engine
 from sqlalchemy.dialects.postgresql import insert
 import fastf1
 import pandas as pd
-from scripts.db_population.connection import engine as postgres, con 
+from scripts.db_population.connection import engine as postgres, con
 
 
 def store_practice_laps(season: int):
@@ -97,6 +97,24 @@ def store_practice_laps(season: int):
         val["speedtrap_fl"] = (
             int(val["speedtrap_fl"]) if pd.notna(val["speedtrap_fl"]) else None
         )
+        val["pit_in_time"] = (
+            val["pit_in_time"]
+            if isinstance(val["pit_in_time"], float)
+            else (
+                val["pit_in_time"].total_seconds()
+                if pd.notna(val["pit_in_time"])
+                else None
+            )
+        )
+        val["pit_out_time"] = (
+            val["pit_out_time"]
+            if isinstance(val["pit_out_time"], float)
+            else (
+                val["pit_out_time"].total_seconds()
+                if pd.notna(val["pit_out_time"])
+                else None
+            )
+        )
         return val
 
     laps_transformed = list(map(transform, practice_laps))
@@ -143,6 +161,8 @@ def store_quali_laps(season: int):
                         "Compound",
                         "LapNumber",
                         "DriverNumber",
+                        "PitInTime",
+                        "PitOutTime",
                     ]
                 ].rename(
                     columns={
@@ -155,6 +175,8 @@ def store_quali_laps(season: int):
                         "Stint": "stint",
                         "Compound": "compound_id",
                         "LapNumber": "lap_number",
+                        "PitInTime": "pit_in_time",
+                        "PitOutTime": "pit_out_time"
                     }
                 )
                 results = session.results[["DriverNumber", "BroadcastName"]]
@@ -209,6 +231,24 @@ def store_quali_laps(season: int):
         val["speedtrap_fl"] = (
             int(val["speedtrap_fl"]) if pd.notna(val["speedtrap_fl"]) else None
         )
+        val["pit_in_time"] = (
+            val["pit_in_time"]
+            if isinstance(val["pit_in_time"], float)
+            else (
+                val["pit_in_time"].total_seconds()
+                if pd.notna(val["pit_in_time"])
+                else None
+            )
+        )
+        val["pit_out_time"] = (
+            val["pit_out_time"]
+            if isinstance(val["pit_out_time"], float)
+            else (
+                val["pit_out_time"].total_seconds()
+                if pd.notna(val["pit_out_time"])
+                else None
+            )
+        )
         return val
 
     laps_transformed = list(map(transform, quali_laps))
@@ -258,6 +298,8 @@ def store_race_laps(season: int):
                         "Compound",
                         "LapNumber",
                         "DriverNumber",
+                        "PitInTime",
+                        "PitOutTime",
                     ]
                 ].rename(
                     columns={
@@ -270,6 +312,8 @@ def store_race_laps(season: int):
                         "Stint": "stint",
                         "Compound": "compound_id",
                         "LapNumber": "lap_number",
+                        "PitInTime": "pit_in_time",
+                        "PitOutTime": "pit_out_time",
                     }
                 )
                 results = session.results[["DriverNumber", "BroadcastName"]]
@@ -321,6 +365,24 @@ def store_race_laps(season: int):
         )
         val["speedtrap_fl"] = (
             int(val["speedtrap_fl"]) if pd.notna(val["speedtrap_fl"]) else None
+        )
+        val["pit_in_time"] = (
+            val["pit_in_time"]
+            if isinstance(val["pit_in_time"], float)
+            else (
+                val["pit_in_time"].total_seconds()
+                if pd.notna(val["pit_in_time"])
+                else None
+            )
+        )
+        val["pit_out_time"] = (
+            val["pit_out_time"]
+            if isinstance(val["pit_out_time"], float)
+            else (
+                val["pit_out_time"].total_seconds()
+                if pd.notna(val["pit_out_time"])
+                else None
+            )
         )
         return val
 
