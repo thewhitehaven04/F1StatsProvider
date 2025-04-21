@@ -3,7 +3,7 @@ import pandas as pd
 import fastf1
 from sqlalchemy import MetaData, Table, create_engine
 from sqlalchemy.dialects.postgresql import insert
-from scripts.db_population.connection import engine as postgres, con 
+from scripts.db_population.connection import engine as postgres, con
 
 def insert_events_into_db():
     years = range(2019, 2026, 1)
